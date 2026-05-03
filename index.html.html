@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>K Mart | Premium Store</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+        :root { --p: #ff4757; --dark: #131921; --success: #2ecc71; --bg: #f4f7f9; --blue: #007185; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background: var(--bg); color: #0f1111; min-height: 100vh; overflow-x: hidden; }
+        
+        /* Premium Fade-In and pop animations */
+        .fade-in { animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+        header { background: var(--dark); padding: 12px 5%; display: flex; justify-content: space-between; align-items: center; color: white; position: sticky; top: 0; z-index: 1000; }
+        .logo { font-size: 26px; font-weight: 800; cursor: pointer; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .logo:hover { transform: scale(1.05); }
+        .logo span { color: var(--p); }
+        .user-loc { background: #232f3e; padding: 8px 5%; font-size: 13px; color: #ccc; display: flex; justify-content: space-between; border-bottom: 1px solid #3a4553; }
+
+        .container { padding: 20px 5%; max-width: 1100px; margin: auto; min-height: calc(100vh - 160px); }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 15px; border: 1px solid #ddd; transition: transform 0.3s, box-shadow 0.3s; }
+        .card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.09); }
+        .hidden { display: none !important; }
+
+        /* HIGH PERFORMANCE SEARCH UI */
+        .search-container { position: relative; max-width: 480px; margin: 15px auto; }
+        .search-bar { width: 100%; padding: 14px 18px; border-radius: 35px; border: 1px solid #ddd; outline: none; font-size: 14px; transition: border-color 0.3s, box-shadow 0.3s; }
+        .search-bar:focus { border-color: var(--blue); box-shadow: 0 0 12px rgba(0, 113, 133, 0.25); }
+        .suggestion-box { position: absolute; top: 105%; left: 0; width: 100%; background: white; border-radius: 12px; box-shadow: 0 10px 35px rgba(0,0,0,0.18); z-index: 1100; max-height: 260px; overflow-y: auto; border: 1px solid #eee; display: none; }
+        .suggest-item { padding: 12px 18px; font-size: 14px; cursor: pointer; border-bottom: 1px solid #fcfcfc; transition: background 0.2s; }
+        .suggest-item:hover { background: #f1f4f6; }
+        .suggest-item b { color: #111; font-weight: 800; }
+
+        #cart-notif { 
+            position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); 
+            background: white; padding: 12px 25px; border-radius: 50px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2); z-index: 10001; 
+            transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            display: flex; align-items: center; gap: 12px; 
+            border: 1.5px solid #ddd; font-weight: 600; color: #333; font-size: 14px;
+        }
+        #cart-notif.show { bottom: 30px; }
+        .notif-logo { background: var(--dark); color: white; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; border: 1px solid #333; }
+        .notif-logo span { color: var(--p); }
+
+        .tracker { display: flex; justify-content: space-between; margin: 25px 0; position: relative; padding: 0 10px; }
+        .tracker::before { content: ''; position: absolute; top: 14px; left: 35px; width: calc(100% - 70px); height: 2px; background: #ddd; z-index: 1; }
+        .tracker-line { content: ''; position: absolute; top: 14px; left: 35px; height: 2px; background: var(--success); z-index: 1; transition: 0.5s; width: 0%; }
+        .step { z-index: 2; text-align: center; width: 25%; font-size: 10px; color: #888; font-weight: 600; }
+        .dot { width: 30px; height: 30px; background: white; border: 2px solid #ddd; border-radius: 50%; margin: 0 auto 5px; display: flex; align-items: center; justify-content: center; font-weight: bold; transition: 0.3s; color: #ccc; }
+        .step.active .dot { border-color: var(--success); color: var(--success); background: #f0fff0; transform: scale(1.15); }
+        .step.active { color: var(--success); }
+        .step.active .dot::after { content: '✓'; }
+
+        #kbot-window { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; display: none; align-items: center; justify-content: center; }
+        .kbot-card { background: white; width: 380px; border-radius: 15px; overflow: hidden; display: flex; flex-direction: column; animation: modalPop 0.3s cubic-bezier(0.1, 0.9, 0.2, 1); }
+        @keyframes modalPop { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: scale(1); } }
+        .kbot-header { background: var(--dark); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+        .kbot-body { height: 400px; overflow-y: auto; padding: 15px; background: #f9f9f9; display: flex; flex-direction: column; gap: 10px; }
+        .kbot-msg { padding: 10px; border-radius: 12px; font-size: 13px; max-width: 85%; line-height: 1.4; }
+        .kbot-bot { background: #eee; align-self: flex-start; }
+        .kbot-user { background: var(--blue); color: white; align-self: flex-end; }
+
+        .order-header { display: flex; justify-content: space-between; background: #F0F2F2; padding: 15px; border-radius: 12px 12px 0 0; border: 1px solid #ddd; font-size: 12px; color: #565959; }
+        .order-body { background: white; padding: 20px; border: 1px solid #ddd; border-top:none; border-radius: 0 0 12px 12px; margin-bottom: 25px; }
+        .status-bold { font-size: 18px; font-weight: 800; margin-bottom: 10px; }
+        .btn { padding: 10px; border: none; border-radius: 8px; cursor: pointer; color: white; font-weight: bold; width: 100%; margin-top: 10px; font-size: 14px; transition: background 0.2s, transform 0.2s; }
+        .btn:hover { opacity: 0.92; transform: translateY(-2px); }
+        .btn-p { background: #FFD814; color: #111; border: 1px solid #FCD200; }
+        .btn-sec { background: white; color: #111; border: 1px solid #D5D9D9; }
+        
+        .details-item-card { border: 1px solid #eee; border-radius: 8px; padding: 15px; display: flex; align-items: center; gap: 15px; background: #fff; margin-bottom: 10px; }
+        .details-item-card img { width: 70px; height: 70px; object-fit: contain; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 18px; }
+        .p-card { background: white; padding: 15px; border-radius: 12px; border: 1px solid #eee; text-align: center; display: flex; flex-direction: column; justify-content: space-between; }
+        .p-card img { width: 100%; height: 140px; object-fit: contain; border-radius: 8px; margin-bottom: 8px; }
+        .qr-box { text-align: center; border: 1px dashed #ccc; padding: 15px; border-radius: 12px; background: #fafafa; margin: 15px 0; }
+        .blur { filter: blur(12px); }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; outline: none; transition: border-color 0.3s; }
+        input:focus { border-color: var(--blue); }
+
+        .checkout-layout { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 15px; }
+        .checkout-main { flex: 2; min-width: 320px; }
+        .checkout-side { flex: 1; min-width: 280px; }
+        .checkout-card { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin-bottom: 15px; }
+        .section-title { font-size: 18px; font-weight: 800; border-bottom: 1px solid #ddd; padding-bottom: 8px; margin-bottom: 12px; }
+        .side-summary-box { background: #fdfdfd; border: 1px solid #ddd; border-radius: 8px; padding: 15px; position: sticky; top: 100px; }
+        .summary-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; }
+        .summary-total { display: flex; justify-content: space-between; font-weight: 800; font-size: 18px; color: #B12704; border-top: 1px solid #ddd; padding-top: 10px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div id="cart-notif">
+    <div class="notif-logo">K<span>MART</span></div>
+    <span id="notif-msg" style="flex:1;">Welcome back to K Mart</span>
+</div>
+
+<header id="site-header" class="hidden">
+    <div class="logo" onclick="showSection('home-page')">K<span>MART</span></div>
+    <div style="display:flex; gap:15px; font-size:14px; cursor:pointer; align-items: center;">
+        <span onclick="showSection('home-page')">Home</span>
+        <span onclick="showSection('orders-page')">Orders</span>
+        <span onclick="showSection('cart-page')" style="position:relative; display:flex; align-items:center; gap:5px; background:rgba(255,255,255,0.1); padding:5px 12px; border-radius:20px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+            <span>(<span id="cart-count">0</span>)</span>
+        </span>
+        <span onclick="logoutUser()" style="background:var(--p); color:white; padding: 5px 10px; border-radius: 5px; font-weight: bold;">Logout</span>
+    </div>
+</header>
+
+<div class="user-loc hidden" id="site-loc">
+    <span id="header-user">Deliver to: Guest - 000000</span> 
+    <span onclick="showSection('address-page')" style="color:white; cursor:pointer; text-decoration:underline; margin-left:10px;">Change</span>
+</div>
+
+<div class="container fade-in">
+    <div id="auth-page">
+        <div class="card" style="max-width:400px; margin: 50px auto; text-align: center;">
+            <div id="login-view">
+                <h2 style="margin-bottom: 15px; font-weight: 800;">Sign-In</h2>
+                <div id="login-step-1">
+                    <input type="email" id="login-email" placeholder="Your Registered Email">
+                    <input type="password" id="login-password" placeholder="Password">
+                    <button class="btn btn-p" onclick="sendLoginOtp()">Get OTP to Sign In</button>
+                </div>
+                <div id="login-step-2" class="hidden">
+                    <p style="font-size: 13px; color:#555;">Enter code sent to your mail</p>
+                    <div class="otp-container">
+                        <input type="text" maxlength="1" class="otp-box" oninput="handleOtpInput(this)" onkeydown="handleOtpBackspace(event, this)">
+                        <input type="text" maxlength="1" class="otp-box" oninput="handleOtpInput(this)" onkeydown="handleOtpBackspace(event, this)">
+                        <input type="text" maxlength="1" class="otp-box" oninput="handleOtpInput(this)" onkeydown="handleOtpBackspace(event, this)">
+                        <input type="text" maxlength="1" class="otp-box" oninput="handleOtpInput(this)" onkeydown="handleOtpBackspace(event, this)">
+                    </div>
+                    <div class="resend-text">Didn't get code? <span id="login-resend" class="resend-link disabled" onclick="resendLoginCode()">Resend in 15s</span></div>
+                    <button class="btn btn-p" onclick="verifyLoginOtp()">Verify & Sign In</button>
+                </div>
+                <p style="font-size: 13px; margin-top:15px; color:#555;">New to K Mart? <span onclick="toggleAuth('register')" style="cursor:pointer; color:var(--blue); font-weight:bold;">Create account</span></p>
+                <p style="font-size: 12px; margin-top:10px;"><span onclick="toggleAuth('forgot')" style="cursor:pointer; color:var(--p); font-weight:bold;">Forgot Password?</span></p>
+            </div>
+
+            <div id="register-view" class="hidden">
+                <h2 style="margin-bottom: 15px; font-weight: 800;">Create Account</h2>
+                <div id="reg-step-1">
+                    <input type="text" id="reg-name" placeholder="Full Name">
+                    <input type="email" id="reg-email" placeholder="Email Address">
+                    <input type="tel" id="reg-phone" maxlength="10" placeholder="Mobile Phone (10 Digits)">
+                    <input type="password" id="reg-password" placeholder="Password">
+                    <button class="btn btn-p" onclick="sendRegisterOtp()">Register & Get OTP</button>
+                </div>
+                <div id="reg-step-2" class="hidden">
+                    <p style="font-size: 13px; color:#555;">Enter code sent to your mail</p>
+                    <div class="otp-container">
+                        <input type="text" maxlength="1" class="otp-box" oninput="handleOtpInput(this)" onkeydown="handleOtpBackspace(event, this)">
+                        <input type="text" maxlength="1" class="otp-box" oninput="handleOtpInput(this)" onkeydown="handleOtpBackspace(event, this)">
+                        <input type="text" maxlength="1" class="otp-box" oninput="handleOtpInput(this)" onkeydown="handleOtpBackspace(event, this)">
+                        <input type="text" maxlength="1" class="otp-box" oninput="handleOtpInput(this)" onkeydown="handleOtpBackspace(event, this)">
+                    </div>
+                    <div class="resend-text">Didn't get code? <span id="reg-resend" class="resend-link disabled" onclick="resendRegisterCode()">Resend in 15s</span></div>
+                    <button class="btn btn-p" onclick="verifyRegisterOtp()">Verify & Sign Up</button>
+                </div>
+                <p style="font-size: 13px; margin-top:15px; color:#555;">Already have an account? <span onclick="toggleAuth('login')" style="cursor:pointer; color:var(--blue); font-weight:bold;">Sign-In</span></p>
+            </div>
+
+            <div id="forgot-view" class="hidden">
+                <h2 style="margin-bottom: 15px; font-weight: 800;">Forgot Password</h2>
+                <div id="forgot-step-1">
+                    <input type="email" id="forgot-email" placeholder="Enter Your Registered Email">
+                    <button class="btn btn-p" onclick="sendForgotOtp()">Send OTP to Mail</button>
+                </div>
+                <div id="forgot-step-2" class="hidden">
+                    <p style="font-size: 13px; color:#555;">Enter verification code</p>
+                    <div class="otp-container">
+                        <input type="text" maxlength="1" class="otp-box" oninput="handleOtpInput(this)" onkeydown="handleOtpBackspace(event, this)">
+                        <input type="text" maxlength="1" class="otp-box" oninput="handleOtpInput(this)" onkeydown="handleOtpBackspace(event, this)">
+                        <input type="text" maxlength="1" class="otp-box" oninput="handleOtpInput(this)" onkeydown="handleOtpBackspace(event, this)">
+                        <input type="text" maxlength="1" class="otp-box" oninput="handleOtpInput(this)" onkeydown="handleOtpBackspace(event, this)">
+                    </div>
+                    <div class="resend-text">Didn't get code? <span id="forgot-resend" class="resend-link disabled" onclick="resendForgotCode()">Resend in 15s</span></div>
+                    <button class="btn btn-p" onclick="verifyForgotOtp()">Verify OTP</button>
+                </div>
+                <div id="forgot-step-3" class="hidden">
+                    <input type="password" id="new-password" placeholder="Set New Password">
+                    <button class="btn btn-p" onclick="resetNewPassword()">Reset Password</button>
+                </div>
+                <p style="font-size: 13px; margin-top:15px; color:#555;"><span onclick="toggleAuth('login')" style="cursor:pointer; color:var(--blue); font-weight:bold;">Back to Sign-In</span></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="home-page" class="hidden">
+        <div class="search-container">
+            <input type="text" class="search-bar" id="product-search" oninput="handleLiveSearch(this.value)" placeholder="🔍 Search Products (e.g. Headphones, Toys, Sunglasses)">
+            <div class="suggestion-box" id="suggest-box"></div>
+        </div>
+        <div class="grid" id="product-list"></div>
+    </div>
+    
+    <div id="address-page" class="hidden">
+        <div class="card" style="max-width:500px; margin:auto;">
+            <h3>Shipping Address</h3>
+            <div id="saved-address-view" style="margin:15px 0;"></div>
+            <div id="address-form" class="hidden">
+                <input id="addr-name" placeholder="Full Name"><input id="addr-flat" placeholder="Flat No."><input id="addr-pin" type="number" placeholder="PIN"><button class="btn btn-p" onclick="saveAddress()">Save</button>
+            </div>
+            <button class="btn btn-sec" onclick="openNewAddressForm()">+ New Address</button>
+        </div>
+    </div>
+
+    <div id="cart-page" class="hidden">
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3>Bag</h3>
+                <button class="btn btn-sec" style="width:auto; margin:0; padding:6px 15px; font-size:12px; color:var(--p); border-color:var(--p);" onclick="removeAllFromBag()">Remove All</button>
+            </div>
+            <div id="cart-items"></div>
+        </div>
+        <div id="checkout-area"></div>
+    </div>
+
+    <div id="payment-page" class="hidden">
+        <div class="checkout-layout">
+            <div class="checkout-main">
+                <div class="checkout-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <span class="section-title" style="border:none; margin:0; padding:0;">1. Delivery Address</span>
+                        <span onclick="showSection('address-page')" style="color:var(--blue); cursor:pointer; font-size:13px; font-weight:600;">Change</span>
+                    </div>
+                    <div id="checkout-address-box" style="font-size:13px; color:#333; line-height:1.5;"></div>
+                </div>
+
+                <div class="checkout-card">
+                    <div class="section-title">2. Payment Method</div>
+                    <div style="padding:10px 0;">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <input type="radio" checked style="width:auto; margin:0;">
+                            <div>
+                                <b style="font-size:14px; color:#111;">Scan and Pay with UPI</b>
+                                <p style="font-size:12px; color:#555;">Scan the QR code on the screen using any UPI app to complete the payment.</p>
+                            </div>
+                        </div>
+
+                        <div class="qr-box" style="max-width:280px; margin: 20px auto 10px auto;">
+                            <div style="position: relative; width: 140px; height: 140px; margin: 0 auto; cursor: pointer;" onclick="document.getElementById('checkout-qr').classList.remove('blur'); document.getElementById('qr-payment-text').style.display='none';">
+                                <img id="checkout-qr" src="myqr.png" class="blur" style="width: 100%; height: 100%; border-radius: 8px; transition: 0.3s;">
+                                <div id="qr-payment-text" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; font-size: 11px; font-weight: 800; color: var(--p); text-shadow: 0 0 5px white;">Click to Reveal QR</div>
+                            </div>
+                            <p style="font-size:12px; margin-top:10px; font-weight:600; color:#444;">Scan and Pay to proceed</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="checkout-card">
+                    <div class="section-title">3. Review items</div>
+                    <div id="checkout-items-review" style="display:grid; gap:12px;"></div>
+                </div>
+            </div>
+
+            <div class="checkout-side">
+                <div class="side-summary-box">
+                    <button class="btn btn-p" style="background:#2ecc71; border-color:#27ae60; color:white; font-size:15px; margin-bottom:15px;" onclick="placeOrder()">I have Paid - Place Order</button>
+                    <div style="font-size: 11px; color:#555; text-align:center; margin-bottom:15px;">By placing your order, you agree to K Mart's terms of services.</div>
+                    
+                    <h3 style="font-weight:800; font-size:16px; margin-bottom:10px;">Order Summary</h3>
+                    <div class="summary-row"><span>Items:</span><span id="summary-items-cost">₹0</span></div>
+                    <div class="summary-row"><span>Delivery:</span><span style="color:var(--success); font-weight:bold;">FREE Delivery</span></div>
+                    <div class="summary-total"><span>Order Total:</span><span id="summary-total-cost">₹0</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="orders-page" class="hidden"><h2 style="margin-bottom:20px;">Your Orders</h2><div id="order-list"></div></div>
+    <div id="details-page" class="hidden"><div id="details-content"></div></div>
+
+    <div id="thank-you-page" class="hidden fade-in">
+        <div class="card" style="text-align: center; max-width: 550px; margin: 30px auto; padding: 40px 20px;">
+            <div style="font-size: 60px; color: var(--success); margin-bottom:10px;">✅</div>
+            <h2 style="font-weight: 800; margin-bottom: 5px;">Order Placed Successfully!</h2>
+            <p style="color:#555; font-size: 14px; margin-bottom: 25px;">Thank you for shopping at K Mart. Your payment is currently being verified.</p>
+            
+            <div style="background: #fdfdfd; padding: 15px; border-radius: 8px; border: 1px solid #eee; text-align: left; margin-bottom: 25px;" id="success-summary-box"></div>
+            
+            <button class="btn btn-p" onclick="showSection('home-page')" style="width: auto; padding: 12px 35px;">Continue Shopping</button>
+        </div>
+    </div>
+</div>
+
+<div id="kbot-window">
+    <div class="kbot-card">
+        <div class="notif-logo" style="display:none;">K<span>MART</span></div>
+        <div class="kbot-header"><span>🤖 K-Bot Support</span> <span onclick="closeKBot()" style="cursor:pointer">✖</span></div>
+        <div id="kbot-content" class="kbot-body"></div>
+        <div id="kbot-input-area" class="hidden" style="padding:10px; border-top:1px solid #ddd; background:white; display:flex; gap:5px;">
+            <input type="text" id="kbot-msg-input" style="flex:1; padding:8px; border-radius:5px; border:1px solid #ddd;">
+            <button class="btn btn-p" onclick="sendKBotMsg()" style="width:auto; margin:0; padding:8px 15px;">Send</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const EMAILJS_PUBLIC_KEY = "ZclBigdEWOXIPgTgW"; 
+    const EMAILJS_SERVICE_ID = "service_bc3a0t8";
+    const EMAILJS_TEMPLATE_ID = "template_wgjpjvl";
+
+    // --- FIREBASE INITIALIZATION ---
+    const firebaseConfig = {
+        databaseURL: "https://k---mart-default-rtdb.firebaseio.com/"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const dbRef = firebase.database().ref();
+
+    (function() {
+        emailjs.init(EMAILJS_PUBLIC_KEY);
+    })();
+
+    let cart = JSON.parse(localStorage.getItem('kmart_active_cart')) || [];
+    let activeSupportId = "";
+    let generatedOtp = "";
+    let tempUserData = null;
+    let resendTimer = null;
+
+    const inventory = [
+        { id: 1, name: "Sneakers Pro Premium", price: 1999, img: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=300" }, 
+        { id: 2, name: "Luxury Quartz Watch", price: 4999, img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300" },
+        { id: 3, name: "Studio Microphone Blue", price: 3499, img: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=300" },
+        { id: 4, name: "Noise Cancelling Headphones", price: 2999, img: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300" },
+        { id: 5, name: "Minimalist Leather Bag", price: 1599, img: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300" },
+        { id: 6, name: "Designer Metal Sunglasses", price: 1299, img: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=300" }
+    ];
+
+    dbRef.on('value', (snapshot) => {
+        const data = snapshot.val() || {};
+        const ordersData = data.orders || {};
+        let db = [];
+        for (let id in ordersData) {
+            db.unshift(ordersData[id]);
+        }
+        localStorage.setItem('kmart_orders', JSON.stringify(db));
+
+        const chatsData = data.chats || {};
+        localStorage.setItem('kmart_live_chat', JSON.stringify(chatsData));
+
+        if (localStorage.getItem('kmart_active_user')) {
+            updateHeader();
+            if (localStorage.getItem('kmart_current_page') === 'orders-page') renderOrders();
+            if (localStorage.getItem('kmart_current_page') === 'details-page' && activeSupportId) syncLive();
+        }
+    });
+
+    function notifyUser(msg, isSuccess = true) {
+        const notif = document.getElementById('cart-notif');
+        document.getElementById('notif-msg').innerText = msg;
+        notif.style.borderColor = isSuccess ? "var(--success)" : "var(--p)";
+        notif.classList.add('show');
+        setTimeout(() => { notif.classList.remove('show'); }, 3000);
+    }
+
+    function handleOtpInput(element) {
+        element.value = element.value.replace(/[^0-9]/g, '');
+        if (element.value.length === 1 && element.nextElementSibling) {
+            element.nextElementSibling.focus();
+        }
+    }
+
+    function handleOtpBackspace(event, element) {
+        if (event.key === "Backspace" && element.value === "" && element.previousElementSibling) {
+            element.previousElementSibling.focus();
+        }
+    }
+
+    function getCollectedOtp(viewId) {
+        let otp = "";
+        const boxes = document.querySelectorAll(`#${viewId} .otp-box`);
+        boxes.forEach(b => otp += b.value);
+        return otp;
+    }
+
+    function resetOtpBoxes(viewId) {
+        const boxes = document.querySelectorAll(`#${viewId} .otp-box`);
+        boxes.forEach(b => b.value = "");
+    }
+
+    function startResendCountdown(elementId, resendFunctionString) {
+        let secondsLeft = 15;
+        const resendElem = document.getElementById(elementId);
+        if (!resendElem) return;
+        
+        resendElem.classList.add('disabled');
+        resendElem.onclick = null;
+        resendElem.innerText = `Resend in ${secondsLeft}s`;
+
+        if (resendTimer) clearInterval(resendTimer);
+
+        resendTimer = setInterval(() => {
+            secondsLeft--;
+            if (secondsLeft <= 0) {
+                clearInterval(resendTimer);
+                resendElem.classList.remove('disabled');
+                resendElem.innerText = "Resend Code";
+                resendElem.onclick = new Function(resendFunctionString);
+            } else {
+                resendElem.innerText = `Resend in ${secondsLeft}s`;
+            }
+        }, 1000);
+    }
+
+    function checkAuth() {
+        if (localStorage.getItem('kmart_active_user')) {
+            document.getElementById('auth-page').classList.add('hidden');
+            document.getElementById('site-header').classList.remove('hidden');
+            document.getElementById('site-loc').classList.remove('hidden');
+            const lastPage = localStorage.getItem('kmart_current_page') || 'home-page';
+            showSection(lastPage);
+        } else {
+            document.getElementById('auth-page').classList.remove('hidden');
+            document.getElementById('site-header').classList.add('hidden');
+            document.getElementById('site-loc').classList.add('hidden');
+            ['home-page','address-page','cart-page','payment-page','orders-page','details-page','thank-you-page'].forEach(s => document.getElementById(s).classList.add('hidden'));
+        }
+    }
+
+    function toggleAuth(view) {
+        document.getElementById('login-view').classList.add('hidden');
+        document.getElementById('register-view').classList.add('hidden');
+        document.getElementById('forgot-view').classList.add('hidden');
+        
+        document.getElementById('login-step-1').classList.remove('hidden');
+        document.getElementById('login-step-2').classList.add('hidden');
+        document.getElementById('reg-step-1').classList.remove('hidden');
+        document.getElementById('reg-step-2').classList.add('hidden');
+        document.getElementById('forgot-step-1').classList.remove('hidden');
+        document.getElementById('forgot-step-2').classList.add('hidden');
+        document.getElementById('forgot-step-3').classList.add('hidden');
+
+        resetOtpBoxes('login-view');
+        resetOtpBoxes('register-view');
+        resetOtpBoxes('forgot-view');
+
+        if (view === 'register') document.getElementById('register-view').classList.remove('hidden');
+        else if (view === 'forgot') document.getElementById('forgot-view').classList.remove('hidden');
+        else document.getElementById('login-view').classList.remove('hidden');
+    }
+
+    function triggerMailOtp(targetEmail, targetName, callback, resendElemId, resendFuncStr) {
+        generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
+        const templateParams = { email: targetEmail, user_name: targetName, otp: generatedOtp };
+
+        emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
+        .then(function() {
+            notifyUser("OTP successfully sent to your mail!", true);
+            if (callback) callback();
+            startResendCountdown(resendElemId, resendFuncStr);
+        })
+        .catch(function(err) {
+            console.error("SDK processing error:", err);
+            notifyUser("Local dynamic OTP code fallback: " + generatedOtp, true);
+            if (callback) callback();
+            startResendCountdown(resendElemId, resendFuncStr);
+        });
+    }
+
+    function sendLoginOtp() {
+        const e = document.getElementById('login-email').value;
+        const p = document.getElementById('login-password').value;
+        if (!e || !p) return notifyUser("Please enter credentials.", false);
+
+        let users = JSON.parse(localStorage.getItem('kmart_users')) || {};
+        let matchedEmailUser = Object.keys(users).find(u => users[u].email === e);
+        
+        if (matchedEmailUser && users[matchedEmailUser].password === p) {
+            tempUserData = { username: matchedEmailUser, name: users[matchedEmailUser].name, email: e, phone: users[matchedEmailUser].phone };
+            triggerMailOtp(e, users[matchedEmailUser].name, () => {
+                document.getElementById('login-step-1').classList.add('hidden');
+                document.getElementById('login-step-2').classList.remove('hidden');
+            }, 'login-resend', 'resendLoginCode()');
+        } else { notifyUser("Invalid Email or Password!", false); }
+    }
+
+    function resendLoginCode() {
+        if (tempUserData) {
+            resetOtpBoxes('login-view');
+            triggerMailOtp(tempUserData.email, tempUserData.name, null, 'login-resend', 'resendLoginCode()');
+        }
+    }
+
+    function verifyLoginOtp() {
+        const entered = getCollectedOtp('login-view');
+        if (entered === generatedOtp && tempUserData) {
+            localStorage.setItem('kmart_active_user', tempUserData.username);
+            let ad = JSON.parse(localStorage.getItem('kmart_user_addr')) || {};
+            if(!ad.name) {
+                ad.name = tempUserData.name;
+                localStorage.setItem('kmart_user_addr', JSON.stringify(ad));
+            }
+            notifyUser("Sign-In successful!", true);
+            tempUserData = null;
+            if (resendTimer) clearInterval(resendTimer);
+            checkAuth();
+        } else { notifyUser("Incorrect OTP code!", false); }
+    }
+
+    function sendRegisterOtp() {
+        const name = document.getElementById('reg-name').value;
+        const e = document.getElementById('reg-email').value;
+        const phone = document.getElementById('reg-phone').value;
+        const p = document.getElementById('reg-password').value;
+        if(!name || !e || !p || !phone) return notifyUser("All details including phone number are required.", false);
+        if(phone.length < 10) return notifyUser("Enter valid 10 digit phone number", false);
+        
+        let users = JSON.parse(localStorage.getItem('kmart_users')) || {};
+        let emailExists = Object.keys(users).some(u => users[u].email === e);
+        if(emailExists) return notifyUser("Email already exists.", false);
+        
+        const cleanUser = e.split('@')[0];
+        tempUserData = { name, username: cleanUser, email: e, password: p, phone: phone };
+        triggerMailOtp(e, name, () => {
+            document.getElementById('reg-step-1').classList.add('hidden');
+            document.getElementById('reg-step-2').classList.remove('hidden');
+        }, 'reg-resend', 'resendRegisterCode()');
+    }
+
+    function resendRegisterCode() {
+        if (tempUserData) {
+            resetOtpBoxes('register-view');
+            triggerMailOtp(tempUserData.email, tempUserData.name, null, 'reg-resend', 'resendRegisterCode()');
+        }
+    }
+
+    function verifyRegisterOtp() {
+        const entered = getCollectedOtp('register-view');
+        if (entered === generatedOtp && tempUserData) {
+            let users = JSON.parse(localStorage.getItem('kmart_users')) || {};
+            users[tempUserData.username] = { name: tempUserData.name, email: tempUserData.email, password: tempUserData.password, phone: tempUserData.phone };
+            localStorage.setItem('kmart_users', JSON.stringify(users));
+            notifyUser("Account Created! You can now Sign-In.", true);
+            tempUserData = null;
+            if (resendTimer) clearInterval(resendTimer);
+            toggleAuth('login');
+        } else { notifyUser("Incorrect OTP code!", false); }
+    }
+
+    function sendForgotOtp() {
+        const e = document.getElementById('forgot-email').value;
+        if(!e) return notifyUser("Enter registered email address.", false);
+        let users = JSON.parse(localStorage.getItem('kmart_users')) || {};
+        let matchedEmailUser = Object.keys(users).find(u => users[u].email === e);
+        
+        if (matchedEmailUser) {
+            tempUserData = { username: matchedEmailUser, name: users[matchedEmailUser].name, email: e };
+            triggerMailOtp(e, users[matchedEmailUser].name, () => {
+                document.getElementById('forgot-step-1').classList.add('hidden');
+                document.getElementById('forgot-step-2').classList.remove('hidden');
+            }, 'forgot-resend', 'resendForgotCode()');
+        } else { notifyUser("Account doesn't exist.", false); }
+    }
+
+    function verifyForgotOtp() {
+        const entered = getCollectedOtp('forgot-view');
+        if(entered === generatedOtp && tempUserData) {
+            notifyUser("Identity verified! Set your new password.", true);
+            if (resendTimer) clearInterval(resendTimer);
+            document.getElementById('forgot-step-2').classList.add('hidden');
+            document.getElementById('forgot-step-3').classList.remove('hidden');
+        } else { notifyUser("Incorrect OTP code!", false); }
+    }
+
+    function resetNewPassword() {
+        const newPass = document.getElementById('new-password').value;
+        if(!newPass) return notifyUser("Please enter a valid password.", false);
+        let users = JSON.parse(localStorage.getItem('kmart_users')) || {};
+        users[tempUserData.username].password = newPass;
+        localStorage.setItem('kmart_users', JSON.stringify(users));
+        notifyUser("Password updated! Sign-In again.", true);
+        tempUserData = null;
+        toggleAuth('login');
+    }
+
+    function logoutUser() {
+        localStorage.removeItem('kmart_active_user');
+        localStorage.removeItem('kmart_current_page');
+        localStorage.removeItem('kmart_active_cart');
+        cart = [];
+        document.getElementById('cart-count').innerText = 0;
+        notifyUser("Signed out successfully!", true);
+        checkAuth();
+    }
+
+    function showSection(id) {
+        if(!localStorage.getItem('kmart_active_user')) return checkAuth();
+        localStorage.setItem('kmart_current_page', id);
+        ['home-page','address-page','cart-page','payment-page','orders-page','details-page','thank-you-page'].forEach(s => document.getElementById(s).classList.add('hidden'));
+        document.getElementById(id).classList.remove('hidden');
+        
+        if(id === 'home-page') { renderHome(); document.getElementById('suggest-box').style.display='none'; }
+        if(id === 'cart-page') renderCart();
+        if(id === 'payment-page') renderSecurePayment();
+        if(id === 'orders-page') renderOrders();
+        updateHeader(); window.scrollTo(0,0);
+    }
+
+    function updateHeader() {
+        const raw = localStorage.getItem('kmart_user_addr');
+        if(raw) { 
+            const ad = JSON.parse(raw); 
+            document.getElementById('header-user').innerText = `Deliver to: ${ad.name || 'User'} - ${ad.pin || '000000'}`; 
+        }
+        document.getElementById('cart-count').innerText = cart.length;
+    }
+
+    function renderHome(customSubset = null) {
+        let localInv = JSON.parse(localStorage.getItem('kmart_inventory')) || [];
+        const mergedInventory = [...inventory];
+        
+        localInv.forEach(p => {
+            if(!mergedInventory.some(x => x.id === p.id)) {
+                mergedInventory.push(p);
+            }
+        });
+
+        const dataset = customSubset ? customSubset : mergedInventory;
+        document.getElementById('product-list').innerHTML = dataset.map(p => `
+            <div class="p-card">
+                <img src="${p.img}">
+                <h4 style="margin:4px 0">${p.name}</h4>
+                <p style="font-weight:800; color:#B12704; margin:5px 0;">₹${p.price}</p>
+                <button class="btn btn-p" onclick="addToBag('${p.id}')">Add to Bag</button>
+            </div>`).join('');
+    }
+
+    function handleLiveSearch(val) {
+        const sBox = document.getElementById('suggest-box');
+        if(!val) { sBox.style.display = 'none'; renderHome(); return; }
+
+        let localInv = JSON.parse(localStorage.getItem('kmart_inventory')) || [];
+        const mergedInventory = [...inventory];
+        localInv.forEach(p => { if(!mergedInventory.some(x => x.id === p.id)) mergedInventory.push(p); });
+        
+        let filtered = mergedInventory.filter(p => p.name.toLowerCase().includes(val.toLowerCase()));
+        if(filtered.length === 0) {
+            sBox.innerHTML = `<div class="suggest-item">No products found.</div>`;
+            sBox.style.display = 'block';
+            renderHome([]);
+            return;
+        }
+
+        sBox.innerHTML = filtered.map(p => {
+            const highlightRegex = new RegExp(`(${val})`, "gi");
+            const highlightText = p.name.replace(highlightRegex, `<b>$1</b>`);
+            return `<div class="suggest-item" onclick="applyDirectProductSelection('${p.id}')">${highlightText} - ₹${p.price}</div>`;
+        }).join('');
+        
+        sBox.style.display = 'block';
+        renderHome(filtered);
+    }
+
+    function applyDirectProductSelection(id) {
+        let localInv = JSON.parse(localStorage.getItem('kmart_inventory')) || [];
+        const mergedInventory = [...inventory];
+        localInv.forEach(p => { if(!mergedInventory.some(x => x.id === p.id)) mergedInventory.push(p); });
+
+        let matchedItem = mergedInventory.filter(p => p.id == id);
+        renderHome(matchedItem);
+        document.getElementById('suggest-box').style.display='none';
+    }
+
+    function addToBag(id) { 
+        let localInv = JSON.parse(localStorage.getItem('kmart_inventory')) || [];
+        const mergedInventory = [...inventory];
+        localInv.forEach(p => { if(!mergedInventory.some(x => x.id === p.id)) mergedInventory.push(p); });
+
+        let p = mergedInventory.find(x => x.id == id);
+        if(p) {
+            cart.push(p); 
+            localStorage.setItem('kmart_active_cart', JSON.stringify(cart));
+            document.getElementById('cart-count').innerText = cart.length; 
+            notifyUser("Item added to Bag successfully!", true);
+        }
+    }
+
+    function renderCart() {
+        const list = document.getElementById('cart-items');
+        if(!cart.length) { 
+            list.innerHTML = "<p style='font-size:14px; color:#555;'>Bag is empty.</p>"; 
+            document.getElementById('checkout-area').innerHTML = "";
+            return; 
+        }
+        
+        list.innerHTML = cart.map((i, idx) => `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #f3f3f3;">
+                <span>${i.name}</span>
+                <div style="display:flex; align-items:center; gap:15px;">
+                    <b>₹${i.price}</b>
+                    <span onclick="removeFromBag(${idx})" style="cursor:pointer; font-size:16px; color:var(--p);" title="Remove item">🗑️</span>
+                </div>
+            </div>`).join('');
+            
+        const ad = JSON.parse(localStorage.getItem('kmart_user_addr'));
+        if(!ad) {
+            document.getElementById('checkout-area').innerHTML = `<button class="btn btn-p" onclick="showSection('address-page')">Add Address to Checkout</button>`;
+        } else {
+            document.getElementById('checkout-area').innerHTML = `
+                <div class="card" style="text-align:center;">
+                    <p style="font-size:14px; margin-bottom:10px;">Selected delivery: 📍 <b>${ad.name}, PIN: ${ad.pin}</b></p>
+                    <button class="btn btn-p" onclick="showSection('payment-page')">Proceed to Checkout</button>
+                </div>`;
+        }
+    }
+
+    function removeFromBag(idx) {
+        cart.splice(idx, 1);
+        localStorage.setItem('kmart_active_cart', JSON.stringify(cart));
+        updateHeader(); renderCart();
+        notifyUser("Item removed from Bag!", true);
+    }
+
+    function removeAllFromBag() {
+        cart = [];
+        localStorage.removeItem('kmart_active_cart');
+        updateHeader(); renderCart();
+        notifyUser("Bag cleared successfully!", true);
+    }
+
+    function openNewAddressForm() {
+        document.getElementById('saved-address-view').classList.add('hidden');
+        document.getElementById('address-form').classList.remove('hidden');
+        document.getElementById('addr-name').value = "";
+        document.getElementById('addr-flat').value = "";
+        document.getElementById('addr-pin').value = "";
+    }
+
+    function saveAddress() {
+        const n = document.getElementById('addr-name').value;
+        const f = document.getElementById('addr-flat').value;
+        const p = document.getElementById('addr-pin').value;
+        if(!n || !f || !p) return notifyUser("All address fields are required.", false);
+
+        const ad = { name: n, flat: f, pin: p };
+        localStorage.setItem('kmart_user_addr', JSON.stringify(ad)); 
+        notifyUser("Address updated successfully!", true);
+        showSection('cart-page');
+    }
+
+    function renderSecurePayment() {
+        const ad = JSON.parse(localStorage.getItem('kmart_user_addr'));
+        if (!ad) return showSection('address-page');
+        document.getElementById('checkout-address-box').innerHTML = `📍 <b>${ad.name}</b><br>${ad.flat}<br>PIN: ${ad.pin}`;
+        document.getElementById('checkout-items-review').innerHTML = cart.map(i => `
+            <div class="details-item-card">
+                <img src="${i.img}">
+                <div><b>${i.name}</b><br><span style="color:#B12704; font-weight:bold;">₹${i.price}</span></div>
+            </div>`).join('');
+            
+        let itemsCost = cart.reduce((a, b) => a + b.price, 0);
+        document.getElementById('summary-items-cost').innerText = `₹${itemsCost}`;
+        document.getElementById('summary-total-cost').innerText = `₹${itemsCost}`;
+    }
+
+    function placeOrder() {
+        if (!cart.length) return notifyUser("Bag is empty.", false);
+        const ad = JSON.parse(localStorage.getItem('kmart_user_addr'));
+        const activeUser = localStorage.getItem('kmart_active_user');
+        const users = JSON.parse(localStorage.getItem('kmart_users')) || {};
+        
+        let email = "", phone = "";
+        if (users[activeUser] && users[activeUser].email) {
+            email = users[activeUser].email;
+            phone = users[activeUser].phone || "No Phone linked";
+        } else {
+            email = activeUser + "@kmart.local";
+            phone = "No phone linked";
+        }
+
+        const now = new Date();
+        const timestamp = now.toLocaleDateString('en-GB') + ' ' + now.toLocaleTimeString('en-GB');
+
+        const order = { 
+            id: "KM-"+Math.floor(Math.random()*900000), 
+            items_list: [...cart], 
+            total: cart.reduce((a, b) => a + b.price, 0), 
+            status: "Pending Verification", 
+            address: `${ad.name}, ${ad.flat}, ${ad.pin}`, 
+            date: timestamp,
+            user_email: email,
+            phone_num: phone
+        };
+        
+        dbRef.child("orders/" + order.id).set(order).then(() => {
+            cart = []; 
+            localStorage.removeItem('kmart_active_cart');
+            updateHeader();
+            renderThankYouScreen(order);
+        }).catch(err => {
+            console.error("Firebase sync error:", err);
+            notifyUser("Order processing failed.", false);
+        });
+    }
+
+    function renderThankYouScreen(order) {
+        showSection('thank-you-page');
+        document.getElementById('success-summary-box').innerHTML = `
+            <p style="margin-bottom: 5px;"><b>Order ID:</b> #${order.id}</p>
+            <p style="margin-bottom: 5px;"><b>Phone No:</b> ${order.phone_num}</p>
+            <p style="margin-bottom: 5px;"><b>Total Price:</b> ₹${order.total}</p>
+            <p style="margin-bottom: 5px;"><b>Date/Time:</b> ${order.date}</p>
+            <p><b>Recipient:</b> ${order.address.split(',')[0]}</p>
+        `;
+    }
+
+    function renderOrders() {
+        const activeUser = localStorage.getItem('kmart_active_user');
+        const users = JSON.parse(localStorage.getItem('kmart_users')) || {};
+        
+        let activeEmail = "";
+        if (users[activeUser] && users[activeUser].email) {
+            activeEmail = users[activeUser].email;
+        } else {
+            activeEmail = activeUser + "@kmart.local";
+        }
+
+        let db = JSON.parse(localStorage.getItem('kmart_orders')) || [];
+        let myOrders = db.filter(o => o.user_email === activeEmail);
+
+        document.getElementById('order-list').innerHTML = myOrders.map(o => `
+            <div class="order-header"><div>PLACED<br>${o.date}</div><div>TOTAL<br>₹${o.total}</div><div style="text-align:right"># ${o.id}</div></div>
+            <div class="order-body">
+                <div class="status-bold" style="color:${o.status === 'Rejected' ? 'var(--p)' : 'var(--success)'};">
+                    ${o.status === 'Rejected' ? `❌ Payment Rejected: ${o.reason || 'Verification failed'}` : o.status}
+                </div>
+                <div style="display:flex; gap:12px;">
+                    <button class="btn btn-p" style="width:160px" onclick="viewDetails('${o.id}')">View details</button>
+                    <button class="btn btn-sec" style="width:140px; margin-top:10px;" onclick="reorderOldOrder('${o.id}')">🔄 Reorder</button>
+                </div>
+            </div>`).join('') || "<p style='font-size:14px;'>No orders placed yet.</p>";
+    }
+
+    function reorderOldOrder(id) {
+        const db = JSON.parse(localStorage.getItem('kmart_orders')) || [];
+        const order = db.find(o => o.id === id);
+        if(!order || !order.items_list) return;
+
+        cart = [...cart, ...order.items_list];
+        localStorage.setItem('kmart_active_cart', JSON.stringify(cart));
+        updateHeader();
+        notifyUser("Items reordered successfully!", true);
+        showSection('cart-page');
+    }
+
+    function viewDetails(id) {
+        const db = JSON.parse(localStorage.getItem('kmart_orders')) || [];
+        const o = db.find(x => x.id === id);
+        if(!o) return;
+        const steps = ["Ordered", "Packed", "Dispatched", "Delivered"];
+        const curIdx = steps.indexOf(o.status);
+        let lineWidth = curIdx > 0 ? (curIdx / (steps.length - 1)) * 100 : 0;
+        let itemsHtml = o.items_list ? o.items_list.map(item => `<div class="details-item-card"><img src="${item.img}"><div><b>${item.name}</b><br>₹${item.price}</div></div>`).join('') : "";
+
+        document.getElementById('details-content').innerHTML = `
+            <div style="background:white; padding:15px; border-bottom:1px solid #ddd; display:flex; align-items:center; gap:10px;"><span style="font-size:20px; cursor:pointer" onclick="showSection('orders-page')">❮</span><h3 style="font-weight:800;">Order Status</h3></div>
+            <div class="card">
+                <h3 style="color:${o.status === 'Pending Verification' ? 'orange' : o.status === 'Rejected' ? 'var(--p)' : 'var(--success)'}">
+                    ${o.status === 'Pending Verification' ? '🕒 Payment Verifying...' : o.status === 'Rejected' ? `❌ Rejected: ${o.reason || 'Verification Failed'}` : '✅ Payment Verified'}
+                </h3>
+                ${o.status !== 'Pending Verification' && o.status !== 'Rejected' && o.status !== 'Cancelled' ? `<div class="tracker"><div class="tracker-line" style="width: ${lineWidth}%;"></div><div class="step ${curIdx >= 0 ? 'active' : ''}"><div class="dot"></div>Ordered</div><div class="step ${curIdx >= 1 ? 'active' : ''}"><div class="dot"></div>Packed</div><div class="step ${curIdx >= 2 ? 'active' : ''}"><div class="dot"></div>Dispatched</div><div class="step ${curIdx >= 3 ? 'active' : ''}"><div class="dot"></div>Delivered</div></div>` : ''}
+            </div>
+            <div class="card"><div style="display:grid; grid-template-columns: 1fr; gap:10px;">${itemsHtml}</div></div>
+            <div class="card"><h4>Delivery Address</h4><div style="font-size:13px; margin-top:10px;">📍 <b>${o.address.split(',')[0]}</b><br>${o.address}</div></div>
+            <div class="card"><h4>Need help?</h4><div class="help-row" onclick="startChat('${o.id}')"><div>Issue with items</div><span>❯</span></div></div>`;
+        showSection('details-page');
+    }
+
+    function startChat(id) {
+        activeSupportId = id; 
+        document.getElementById('kbot-window').style.display = 'flex';
+        document.getElementById('kbot-input-area').classList.remove('hidden');
+        
+        let chats = JSON.parse(localStorage.getItem('kmart_live_chat')) || {};
+        if(!chats[id]) { 
+            chats[id] = { active: true, userName: "Customer", messages: [{sender: 'bot', text: 'Connecting...'}] }; 
+            dbRef.child("chats/" + id).set(chats[id]);
+        }
+    }
+
+    function sendKBotMsg() { 
+        const v = document.getElementById('kbot-msg-input').value; 
+        if(!v) return; 
+        let chats = JSON.parse(localStorage.getItem('kmart_live_chat')) || {}; 
+        if(chats[activeSupportId]) {
+            if(!chats[activeSupportId].messages) chats[activeSupportId].messages = [];
+            chats[activeSupportId].messages.push({sender:'user', text:v});
+            dbRef.child("chats/" + activeSupportId).set(chats[activeSupportId]);
+            document.getElementById('kbot-msg-input').value = ""; 
+        }
+    }
+
+    function syncLive() {
+        let chats = JSON.parse(localStorage.getItem('kmart_live_chat')) || {};
+        if(!chats[activeSupportId] || !chats[activeSupportId].active) { 
+            if(activeSupportId) { 
+                notifyUser("The chat session has ended.", false); 
+                document.getElementById('kbot-window').style.display='none'; 
+                activeSupportId=""; 
+            } 
+            return; 
+        }
+        document.getElementById('kbot-content').innerHTML = chats[activeSupportId].messages.map(m => `<div class="kbot-msg kbot-${m.sender}">${m.text}</div>`).join('');
+        document.getElementById('kbot-content').scrollTop = 9999;
+    }
+
+    function closeKBot() { document.getElementById('kbot-window').style.display = 'none'; }
+
+    checkAuth();
+</script>
+</body>
+</html>
