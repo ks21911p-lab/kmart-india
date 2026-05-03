@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>K Mart | Premium Store</title>
+    <title>K Mart India | Premium Store</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -12,7 +12,6 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
         body { background: var(--bg); color: #0f1111; min-height: 100vh; overflow-x: hidden; }
         
-        /* Premium Fade-In and pop animations */
         .fade-in { animation: fadeIn 0.4s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -27,7 +26,6 @@
         .card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.09); }
         .hidden { display: none !important; }
 
-        /* HIGH PERFORMANCE SEARCH UI */
         .search-container { position: relative; max-width: 480px; margin: 15px auto; }
         .search-bar { width: 100%; padding: 14px 18px; border-radius: 35px; border: 1px solid #ddd; outline: none; font-size: 14px; transition: border-color 0.3s, box-shadow 0.3s; }
         .search-bar:focus { border-color: var(--blue); box-shadow: 0 0 12px rgba(0, 113, 133, 0.25); }
@@ -93,17 +91,21 @@
         .side-summary-box { background: #fdfdfd; border: 1px solid #ddd; border-radius: 8px; padding: 15px; position: sticky; top: 100px; }
         .summary-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; }
         .summary-total { display: flex; justify-content: space-between; font-weight: 800; font-size: 18px; color: #B12704; border-top: 1px solid #ddd; padding-top: 10px; margin-top: 10px; }
+
+        /* ADVANCED SECTION ADDRESS STYLING */
+        .form-group-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .pin-loader { font-size: 11px; font-weight: 600; color: var(--blue); margin-top: -5px; margin-bottom: 8px; display: none; }
     </style>
 </head>
 <body>
 
 <div id="cart-notif">
-    <div class="notif-logo">K<span>MART</span></div>
-    <span id="notif-msg" style="flex:1;">Welcome back to K Mart</span>
+    <div class="notif-logo">K<span>MART INDIA</span></div>
+    <span id="notif-msg" style="flex:1;">Welcome back to K Mart India</span>
 </div>
 
 <header id="site-header" class="hidden">
-    <div class="logo" onclick="showSection('home-page')">K<span>MART</span></div>
+    <div class="logo" onclick="showSection('home-page')">K<span>MART INDIA</span></div>
     <div style="display:flex; gap:15px; font-size:14px; cursor:pointer; align-items: center;">
         <span onclick="showSection('home-page')">Home</span>
         <span onclick="showSection('orders-page')">Orders</span>
@@ -141,7 +143,7 @@
                     <div class="resend-text">Didn't get code? <span id="login-resend" class="resend-link disabled" onclick="resendLoginCode()">Resend in 15s</span></div>
                     <button class="btn btn-p" onclick="verifyLoginOtp()">Verify & Sign In</button>
                 </div>
-                <p style="font-size: 13px; margin-top:15px; color:#555;">New to K Mart? <span onclick="toggleAuth('register')" style="cursor:pointer; color:var(--blue); font-weight:bold;">Create account</span></p>
+                <p style="font-size: 13px; margin-top:15px; color:#555;">New to K Mart India? <span onclick="toggleAuth('register')" style="cursor:pointer; color:var(--blue); font-weight:bold;">Create account</span></p>
                 <p style="font-size: 12px; margin-top:10px;"><span onclick="toggleAuth('forgot')" style="cursor:pointer; color:var(--p); font-weight:bold;">Forgot Password?</span></p>
             </div>
 
@@ -196,20 +198,35 @@
 
     <div id="home-page" class="hidden">
         <div class="search-container">
-            <input type="text" class="search-bar" id="product-search" oninput="handleLiveSearch(this.value)" placeholder="🔍 Search Products (e.g. Headphones, Toys, Sunglasses)">
+            <input type="text" class="search-bar" id="product-search" oninput="handleLiveSearch(this.value)" placeholder="🔍 Search Products (e.g. Headphones, Sunglasses)">
             <div class="suggestion-box" id="suggest-box"></div>
         </div>
         <div class="grid" id="product-list"></div>
     </div>
     
     <div id="address-page" class="hidden">
-        <div class="card" style="max-width:500px; margin:auto;">
-            <h3>Shipping Address</h3>
+        <div class="card" style="max-width:550px; margin:auto;">
+            <h3 class="section-title">Manage Delivery Address</h3>
             <div id="saved-address-view" style="margin:15px 0;"></div>
+            
             <div id="address-form" class="hidden">
-                <input id="addr-name" placeholder="Full Name"><input id="addr-flat" placeholder="Flat No."><input id="addr-pin" type="number" placeholder="PIN"><button class="btn btn-p" onclick="saveAddress()">Save</button>
+                <input id="addr-name" placeholder="Full Name (Recipient Name)">
+                <input id="addr-flat" placeholder="Flat No. / House Name / Building Name">
+                <input id="addr-area" placeholder="Area / Locality / Street">
+                <input id="addr-landmark" placeholder="Landmark (Optional)">
+                
+                <div class="form-group-grid">
+                    <div>
+                        <input id="addr-pin" type="number" oninput="handlePinFetch(this.value)" placeholder="PIN Code">
+                        <div id="pin-loader-msg" class="pin-loader">Detecting location data...</div>
+                    </div>
+                    <input id="addr-city" placeholder="District / City" readonly style="background:#f4f7f9;">
+                </div>
+                
+                <input id="addr-state" placeholder="State" readonly style="background:#f4f7f9;">
+                <button class="btn btn-p" style="background:#2ecc71; color:white; border:none; margin-top:10px;" onclick="saveAddress()">Save Delivery Address</button>
             </div>
-            <button class="btn btn-sec" onclick="openNewAddressForm()">+ New Address</button>
+            <button class="btn btn-sec" id="new-addr-action-btn" onclick="openNewAddressForm()">+ New Address</button>
         </div>
     </div>
 
@@ -265,7 +282,7 @@
             <div class="checkout-side">
                 <div class="side-summary-box">
                     <button class="btn btn-p" style="background:#2ecc71; border-color:#27ae60; color:white; font-size:15px; margin-bottom:15px;" onclick="placeOrder()">I have Paid - Place Order</button>
-                    <div style="font-size: 11px; color:#555; text-align:center; margin-bottom:15px;">By placing your order, you agree to K Mart's terms of services.</div>
+                    <div style="font-size: 11px; color:#555; text-align:center; margin-bottom:15px;">By placing your order, you agree to K Mart India's terms.</div>
                     
                     <h3 style="font-weight:800; font-size:16px; margin-bottom:10px;">Order Summary</h3>
                     <div class="summary-row"><span>Items:</span><span id="summary-items-cost">₹0</span></div>
@@ -283,7 +300,7 @@
         <div class="card" style="text-align: center; max-width: 550px; margin: 30px auto; padding: 40px 20px;">
             <div style="font-size: 60px; color: var(--success); margin-bottom:10px;">✅</div>
             <h2 style="font-weight: 800; margin-bottom: 5px;">Order Placed Successfully!</h2>
-            <p style="color:#555; font-size: 14px; margin-bottom: 25px;">Thank you for shopping at K Mart. Your payment is currently being verified.</p>
+            <p style="color:#555; font-size: 14px; margin-bottom: 25px;">Thank you for shopping at K Mart India. Your payment is currently being verified.</p>
             
             <div style="background: #fdfdfd; padding: 15px; border-radius: 8px; border: 1px solid #eee; text-align: left; margin-bottom: 25px;" id="success-summary-box"></div>
             
@@ -326,14 +343,8 @@
     let tempUserData = null;
     let resendTimer = null;
 
-    const inventory = [
-        { id: 1, name: "Sneakers Pro Premium", price: 1999, img: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=300" }, 
-        { id: 2, name: "Luxury Quartz Watch", price: 4999, img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300" },
-        { id: 3, name: "Studio Microphone Blue", price: 3499, img: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=300" },
-        { id: 4, name: "Noise Cancelling Headphones", price: 2999, img: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300" },
-        { id: 5, name: "Minimalist Leather Bag", price: 1599, img: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=300" },
-        { id: 6, name: "Designer Metal Sunglasses", price: 1299, img: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=300" }
-    ];
+    // Hardcoded products cleared - fully dynamically read from seller dashboard
+    const inventory = [];
 
     dbRef.on('value', (snapshot) => {
         const data = snapshot.val() || {};
@@ -460,7 +471,7 @@
         })
         .catch(function(err) {
             console.error("SDK processing error:", err);
-            notifyUser("Local dynamic OTP code fallback: " + generatedOtp, true);
+            notifyUser("Local dynamic OTP fallback: " + generatedOtp, true);
             if (callback) callback();
             startResendCountdown(resendElemId, resendFuncStr);
         });
@@ -600,6 +611,7 @@
         
         if(id === 'home-page') { renderHome(); document.getElementById('suggest-box').style.display='none'; }
         if(id === 'cart-page') renderCart();
+        if(id === 'address-page') renderAddressView();
         if(id === 'payment-page') renderSecurePayment();
         if(id === 'orders-page') renderOrders();
         updateHeader(); window.scrollTo(0,0);
@@ -625,10 +637,16 @@
         });
 
         const dataset = customSubset ? customSubset : mergedInventory;
+        if(dataset.length === 0) {
+            document.getElementById('product-list').innerHTML = `<p style="grid-column: 1/-1; text-align:center; padding:40px; color:#555; font-size:14px;">No products available at the moment.</p>`;
+            return;
+        }
+
         document.getElementById('product-list').innerHTML = dataset.map(p => `
             <div class="p-card">
                 <img src="${p.img}">
                 <h4 style="margin:4px 0">${p.name}</h4>
+                <p style="font-size:12px; color:#666; margin-bottom:5px;">${p.desc || 'No description available'}</p>
                 <p style="font-weight:800; color:#B12704; margin:5px 0;">₹${p.price}</p>
                 <button class="btn btn-p" onclick="addToBag('${p.id}')">Add to Bag</button>
             </div>`).join('');
@@ -707,7 +725,7 @@
         } else {
             document.getElementById('checkout-area').innerHTML = `
                 <div class="card" style="text-align:center;">
-                    <p style="font-size:14px; margin-bottom:10px;">Selected delivery: 📍 <b>${ad.name}, PIN: ${ad.pin}</b></p>
+                    <p style="font-size:13px; margin-bottom:10px;">Selected delivery: 📍 <b>${ad.name}, PIN: ${ad.pin}</b></p>
                     <button class="btn btn-p" onclick="showSection('payment-page')">Proceed to Checkout</button>
                 </div>`;
         }
@@ -727,30 +745,92 @@
         notifyUser("Bag cleared successfully!", true);
     }
 
+    /* ADVANCED PIN CODE & ADDRESS IMPLEMENTATION */
+    function renderAddressView() {
+        const ad = JSON.parse(localStorage.getItem('kmart_user_addr'));
+        const savedView = document.getElementById('saved-address-view');
+        if(ad && ad.flat) {
+            savedView.innerHTML = `
+                <div style="background:#f9f9f9; padding:15px; border-radius:10px; border:1px solid #eee; line-height:1.6; font-size:13.5px;">
+                    <p><b>Name:</b> ${ad.name}</p>
+                    <p><b>Building/Flat:</b> ${ad.flat}</p>
+                    <p><b>Area/Street:</b> ${ad.area}</p>
+                    <p><b>Landmark:</b> ${ad.landmark || 'N/A'}</p>
+                    <p><b>PIN:</b> ${ad.pin}</p>
+                    <p><b>Locality:</b> ${ad.city}, ${ad.state}</p>
+                </div>`;
+            document.getElementById('address-form').classList.add('hidden');
+            document.getElementById('new-addr-action-btn').innerText = "Edit Current Address";
+        } else {
+            savedView.innerHTML = `<p style="font-size:13px; color:#666;">No saved addresses yet.</p>`;
+            openNewAddressForm();
+        }
+    }
+
     function openNewAddressForm() {
         document.getElementById('saved-address-view').classList.add('hidden');
         document.getElementById('address-form').classList.remove('hidden');
-        document.getElementById('addr-name').value = "";
-        document.getElementById('addr-flat').value = "";
-        document.getElementById('addr-pin').value = "";
+        
+        const ad = JSON.parse(localStorage.getItem('kmart_user_addr')) || {};
+        document.getElementById('addr-name').value = ad.name || "";
+        document.getElementById('addr-flat').value = ad.flat || "";
+        document.getElementById('addr-area').value = ad.area || "";
+        document.getElementById('addr-landmark').value = ad.landmark || "";
+        document.getElementById('addr-pin').value = ad.pin || "";
+        document.getElementById('addr-city').value = ad.city || "";
+        document.getElementById('addr-state').value = ad.state || "";
+    }
+
+    function handlePinFetch(pinValue) {
+        if(pinValue.length === 6) {
+            const loader = document.getElementById('pin-loader-msg');
+            loader.style.display = 'block';
+            loader.innerText = "Detecting location data...";
+            
+            fetch(`https://api.postalpincode.in/pincode/${pinValue}`)
+            .then(res => res.json())
+            .then(data => {
+                loader.style.display = 'none';
+                if(data && data[0] && data[0].Status === "Success") {
+                    const info = data[0].PostOffice[0];
+                    document.getElementById('addr-city').value = info.District;
+                    document.getElementById('addr-state').value = info.State;
+                    notifyUser("Location details fetched!", true);
+                } else {
+                    notifyUser("Invalid PIN Code!", false);
+                    document.getElementById('addr-city').value = "";
+                    document.getElementById('addr-state').value = "";
+                }
+            })
+            .catch(err => {
+                loader.style.display = 'none';
+                console.error("PIN Fetch failure", err);
+            });
+        }
     }
 
     function saveAddress() {
         const n = document.getElementById('addr-name').value;
         const f = document.getElementById('addr-flat').value;
+        const a = document.getElementById('addr-area').value;
+        const l = document.getElementById('addr-landmark').value;
         const p = document.getElementById('addr-pin').value;
-        if(!n || !f || !p) return notifyUser("All address fields are required.", false);
+        const c = document.getElementById('addr-city').value;
+        const s = document.getElementById('addr-state').value;
 
-        const ad = { name: n, flat: f, pin: p };
+        if(!n || !f || !a || !p || !c || !s) return notifyUser("All compulsory fields must be filled.", false);
+
+        const ad = { name: n, flat: f, area: a, landmark: l, pin: p, city: c, state: s };
         localStorage.setItem('kmart_user_addr', JSON.stringify(ad)); 
-        notifyUser("Address updated successfully!", true);
+        notifyUser("Address successfully updated!", true);
         showSection('cart-page');
     }
 
     function renderSecurePayment() {
         const ad = JSON.parse(localStorage.getItem('kmart_user_addr'));
         if (!ad) return showSection('address-page');
-        document.getElementById('checkout-address-box').innerHTML = `📍 <b>${ad.name}</b><br>${ad.flat}<br>PIN: ${ad.pin}`;
+        document.getElementById('checkout-address-box').innerHTML = `
+            📍 <b>${ad.name}</b><br>${ad.flat}<br>${ad.area}<br>${ad.landmark ? `Landmark: ${ad.landmark}<br>` : ''}${ad.city}, ${ad.state} - PIN: ${ad.pin}`;
         document.getElementById('checkout-items-review').innerHTML = cart.map(i => `
             <div class="details-item-card">
                 <img src="${i.img}">
@@ -785,7 +865,7 @@
             items_list: [...cart], 
             total: cart.reduce((a, b) => a + b.price, 0), 
             status: "Pending Verification", 
-            address: `${ad.name}, ${ad.flat}, ${ad.pin}`, 
+            address: `${ad.name}, ${ad.flat}, ${ad.area}, ${ad.city}, ${ad.state} - PIN: ${ad.pin}`, 
             date: timestamp,
             user_email: email,
             phone_num: phone
