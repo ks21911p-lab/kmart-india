@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>K Mart India | Premium Store</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
@@ -41,10 +42,27 @@
             transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
             display: flex; align-items: center; gap: 12px; 
             border: 1.5px solid #ddd; font-weight: 600; color: #333; font-size: 14px;
+            width: 90%; max-width: 400px;
         }
         #cart-notif.show { bottom: 30px; }
         .notif-logo { background: var(--dark); color: white; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; border: 1px solid #333; }
         .notif-logo span { color: var(--p); }
+
+        /* OTP Input Styling Boxes Layout */
+        .otp-container { display: flex; justify-content: center; gap: 10px; margin: 15px 0; }
+        .otp-box { width: 45px; height: 50px; text-align: center; font-size: 22px; font-weight: 800; border: 2px solid #ddd; border-radius: 8px; outline: none; }
+
+        /* RESPONSIVE CSS MEDIA QUERIES FOR MOBILE SIZE */
+        @media (max-width: 600px) {
+            header { padding: 10px 4%; }
+            .logo { font-size: 20px; }
+            .container { padding: 15px 4%; }
+            .grid { grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
+            .p-card img { height: 110px !important; }
+            .p-card h4 { font-size: 13px; height: 34px; overflow: hidden; }
+            .form-group-grid { grid-template-columns: 1fr !important; }
+            .otp-box { width: 40px; height: 45px; }
+        }
 
         .tracker { display: flex; justify-content: space-between; margin: 25px 0; position: relative; padding: 0 10px; }
         .tracker::before { content: ''; position: absolute; top: 14px; left: 35px; width: calc(100% - 70px); height: 2px; background: #ddd; z-index: 1; }
@@ -80,7 +98,7 @@
         .p-card img { width: 100%; height: 140px; object-fit: contain; border-radius: 8px; margin-bottom: 8px; }
         .qr-box { text-align: center; border: 1px dashed #ccc; padding: 15px; border-radius: 12px; background: #fafafa; margin: 15px 0; }
         .blur { filter: blur(12px); }
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; outline: none; transition: border-color 0.3s; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; outline: none; transition: border-color 0.3s; font-size: 16px;}
         input:focus { border-color: var(--blue); }
 
         .checkout-layout { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 15px; }
@@ -130,7 +148,7 @@
                 <div id="login-step-1">
                     <input type="email" id="login-email" placeholder="Your Registered Email">
                     <input type="password" id="login-password" placeholder="Password">
-                    <button class="btn btn-p" onclick="sendLoginOtp()">Get OTP to Sign In</button>
+                    <button class="btn btn-p" onclick="handleDirectLogin()">Sign In</button>
                 </div>
                 <div id="login-step-2" class="hidden">
                     <p style="font-size: 13px; color:#555;">Enter code sent to your mail</p>
@@ -343,7 +361,6 @@
     let tempUserData = null;
     let resendTimer = null;
 
-    // Hardcoded products cleared - fully dynamically read from seller dashboard
     const inventory = [];
 
     dbRef.on('value', (snapshot) => {
@@ -477,45 +494,30 @@
         });
     }
 
-    function sendLoginOtp() {
-        const e = document.getElementById('login-email').value;
-        const p = document.getElementById('login-password').value;
-        if (!e || !p) return notifyUser("Please enter credentials.", false);
+    /* --- TERI EXPLICIT REQUIREMENT: DIRECT LOGIN PAR SET KIYA --- */
+    function handleDirectLogin() {
+        const email = document.getElementById('login-email').value;
+        const pass = document.getElementById('login-password').value;
+        if(!email || !pass) return notifyUser("Please enter email & password", false);
 
         let users = JSON.parse(localStorage.getItem('kmart_users')) || {};
-        let matchedEmailUser = Object.keys(users).find(u => users[u].email === e);
-        
-        if (matchedEmailUser && users[matchedEmailUser].password === p) {
-            tempUserData = { username: matchedEmailUser, name: users[matchedEmailUser].name, email: e, phone: users[matchedEmailUser].phone };
-            triggerMailOtp(e, users[matchedEmailUser].name, () => {
-                document.getElementById('login-step-1').classList.add('hidden');
-                document.getElementById('login-step-2').classList.remove('hidden');
-            }, 'login-resend', 'resendLoginCode()');
-        } else { notifyUser("Invalid Email or Password!", false); }
-    }
+        let userKey = Object.keys(users).find(u => users[u].email === email);
 
-    function resendLoginCode() {
-        if (tempUserData) {
-            resetOtpBoxes('login-view');
-            triggerMailOtp(tempUserData.email, tempUserData.name, null, 'login-resend', 'resendLoginCode()');
+        if (userKey && users[userKey].password === pass) {
+            localStorage.setItem('kmart_active_user', userKey);
+            notifyUser("Sign-In successful!", true);
+            checkAuth();
+        } else {
+            notifyUser("Invalid Email or Password!", false);
         }
     }
 
-    function verifyLoginOtp() {
-        const entered = getCollectedOtp('login-view');
-        if (entered === generatedOtp && tempUserData) {
-            localStorage.setItem('kmart_active_user', tempUserData.username);
-            let ad = JSON.parse(localStorage.getItem('kmart_user_addr')) || {};
-            if(!ad.name) {
-                ad.name = tempUserData.name;
-                localStorage.setItem('kmart_user_addr', JSON.stringify(ad));
-            }
-            notifyUser("Sign-In successful!", true);
-            tempUserData = null;
-            if (resendTimer) clearInterval(resendTimer);
-            checkAuth();
-        } else { notifyUser("Incorrect OTP code!", false); }
+    function sendLoginOtp() {
+        // Direct login bypass handling triggers handleDirectLogin directly from button click context now.
     }
+
+    function resendLoginCode() {}
+    function verifyLoginOtp() {}
 
     function sendRegisterOtp() {
         const name = document.getElementById('reg-name').value;
@@ -745,7 +747,6 @@
         notifyUser("Bag cleared successfully!", true);
     }
 
-    /* ADVANCED PIN CODE & ADDRESS IMPLEMENTATION */
     function renderAddressView() {
         const ad = JSON.parse(localStorage.getItem('kmart_user_addr'));
         const savedView = document.getElementById('saved-address-view');
