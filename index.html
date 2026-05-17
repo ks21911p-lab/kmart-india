@@ -48,16 +48,15 @@
         .notif-logo { background: var(--dark); color: white; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; border: 1px solid #333; }
         .notif-logo span { color: var(--p); }
 
-        /* OTP Input Styling Boxes Layout */
         .otp-container { display: flex; justify-content: center; gap: 10px; margin: 15px 0; }
         .otp-box { width: 45px; height: 50px; text-align: center; font-size: 22px; font-weight: 800; border: 2px solid #ddd; border-radius: 8px; outline: none; }
 
-        /* RESPONSIVE CSS MEDIA QUERIES FOR MOBILE SIZE */
         @media (max-width: 600px) {
             header { padding: 10px 4%; }
             .logo { font-size: 20px; }
             .container { padding: 15px 4%; }
             .grid { grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
+            .p-card { padding: 10px; }
             .p-card img { height: 110px !important; }
             .p-card h4 { font-size: 13px; height: 34px; overflow: hidden; }
             .form-group-grid { grid-template-columns: 1fr !important; }
@@ -110,7 +109,6 @@
         .summary-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; }
         .summary-total { display: flex; justify-content: space-between; font-weight: 800; font-size: 18px; color: #B12704; border-top: 1px solid #ddd; padding-top: 10px; margin-top: 10px; }
 
-        /* ADVANCED SECTION ADDRESS STYLING */
         .form-group-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .pin-loader { font-size: 11px; font-weight: 600; color: var(--blue); margin-top: -5px; margin-bottom: 8px; display: none; }
     </style>
@@ -365,18 +363,21 @@
 
     dbRef.on('value', (snapshot) => {
         const data = snapshot.val() || {};
-        const ordersData = data.orders || {};
-        let db = [];
-        for (let id in ordersData) {
-            db.unshift(ordersData[id]);
+        
+        // --- GLOBAL SELLER CATALOG CATALOG REALTIME REAL SYNC FOR ALL ACCOUNTS ---
+        const inventoryData = data.inventory || {};
+        let items = [];
+        for (let key in inventoryData) {
+            items.push(inventoryData[key]);
         }
-        localStorage.setItem('kmart_orders', JSON.stringify(db));
+        localStorage.setItem('kmart_inventory', JSON.stringify(items));
 
         const chatsData = data.chats || {};
         localStorage.setItem('kmart_live_chat', JSON.stringify(chatsData));
 
         if (localStorage.getItem('kmart_active_user')) {
             updateHeader();
+            if (localStorage.getItem('kmart_current_page') === 'home-page') renderHome();
             if (localStorage.getItem('kmart_current_page') === 'orders-page') renderOrders();
             if (localStorage.getItem('kmart_current_page') === 'details-page' && activeSupportId) syncLive();
         }
@@ -494,7 +495,6 @@
         });
     }
 
-    /* --- TERI EXPLICIT REQUIREMENT: DIRECT LOGIN PAR SET KIYA --- */
     function handleDirectLogin() {
         const email = document.getElementById('login-email').value;
         const pass = document.getElementById('login-password').value;
@@ -512,11 +512,8 @@
         }
     }
 
-    function sendLoginOtp() {
-        // Direct login bypass handling triggers handleDirectLogin directly from button click context now.
-    }
-
-    function resendLoginCode() {}
+    function sendLoginOtp() {}
+     Richmond resendLoginCode() {}
     function verifyLoginOtp() {}
 
     function sendRegisterOtp() {
@@ -630,28 +627,29 @@
 
     function renderHome(customSubset = null) {
         let localInv = JSON.parse(localStorage.getItem('kmart_inventory')) || [];
-        const mergedInventory = [...inventory];
-        
-        localInv.forEach(p => {
-            if(!mergedInventory.some(x => x.id === p.id)) {
-                mergedInventory.push(p);
-            }
-        });
-
-        const dataset = customSubset ? customSubset : mergedInventory;
+        const dataset = customSubset ? customSubset : localInv;
         if(dataset.length === 0) {
             document.getElementById('product-list').innerHTML = `<p style="grid-column: 1/-1; text-align:center; padding:40px; color:#555; font-size:14px;">No products available at the moment.</p>`;
             return;
         }
 
-        document.getElementById('product-list').innerHTML = dataset.map(p => `
+        document.getElementById('product-list').innerHTML = dataset.map(p => {
+            // --- QUANTITY DYNAMIC STOCK CONTROL CHECK ---
+            const isOutOfStock = !p.qty || parseInt(p.qty) <= 0;
+            return `
             <div class="p-card">
                 <img src="${p.img}">
                 <h4 style="margin:4px 0">${p.name}</h4>
                 <p style="font-size:12px; color:#666; margin-bottom:5px;">${p.desc || 'No description available'}</p>
                 <p style="font-weight:800; color:#B12704; margin:5px 0;">₹${p.price}</p>
-                <button class="btn btn-p" onclick="addToBag('${p.id}')">Add to Bag</button>
-            </div>`).join('');
+                <p style="font-size:11px; color:${isOutOfStock ? 'red' : 'green'}; font-weight:bold; margin-bottom:5px;">
+                    ${isOutOfStock ? 'Out of Stock' : `Qty Left: ${p.qty}`}
+                </p>
+                <button class="btn btn-p" ${isOutOfStock ? 'disabled style="background:#ccc; cursor:not-allowed;"' : ''} onclick="addToBag('${p.id}')">
+                    ${isOutOfStock ? 'Sold Out' : 'Add to Bag'}
+                </button>
+            </div>`;
+        }).join('');
     }
 
     function handleLiveSearch(val) {
@@ -659,10 +657,7 @@
         if(!val) { sBox.style.display = 'none'; renderHome(); return; }
 
         let localInv = JSON.parse(localStorage.getItem('kmart_inventory')) || [];
-        const mergedInventory = [...inventory];
-        localInv.forEach(p => { if(!mergedInventory.some(x => x.id === p.id)) mergedInventory.push(p); });
-        
-        let filtered = mergedInventory.filter(p => p.name.toLowerCase().includes(val.toLowerCase()));
+        let filtered = localInv.filter(p => p.name.toLowerCase().includes(val.toLowerCase()));
         if(filtered.length === 0) {
             sBox.innerHTML = `<div class="suggest-item">No products found.</div>`;
             sBox.style.display = 'block';
@@ -682,21 +677,16 @@
 
     function applyDirectProductSelection(id) {
         let localInv = JSON.parse(localStorage.getItem('kmart_inventory')) || [];
-        const mergedInventory = [...inventory];
-        localInv.forEach(p => { if(!mergedInventory.some(x => x.id === p.id)) mergedInventory.push(p); });
-
-        let matchedItem = mergedInventory.filter(p => p.id == id);
+        let matchedItem = localInv.filter(p => p.id == id);
         renderHome(matchedItem);
         document.getElementById('suggest-box').style.display='none';
     }
 
     function addToBag(id) { 
         let localInv = JSON.parse(localStorage.getItem('kmart_inventory')) || [];
-        const mergedInventory = [...inventory];
-        localInv.forEach(p => { if(!mergedInventory.some(x => x.id === p.id)) mergedInventory.push(p); });
-
-        let p = mergedInventory.find(x => x.id == id);
+        let p = localInv.find(x => x.id == id);
         if(p) {
+            if(!p.qty || parseInt(p.qty) <= 0) return notifyUser("Item is out of stock!", false);
             cart.push(p); 
             localStorage.setItem('kmart_active_cart', JSON.stringify(cart));
             document.getElementById('cart-count').innerText = cart.length; 
@@ -872,88 +862,102 @@
             phone_num: phone
         };
         
-        dbRef.child("orders/" + order.id).set(order).then(() => {
-            cart = []; 
-            localStorage.removeItem('kmart_active_cart');
-            updateHeader();
-            renderThankYouScreen(order);
-        }).catch(err => {
-            console.error("Firebase sync error:", err);
-            notifyUser("Order processing failed.", false);
+        // --- SELLER inventory DECREMENT LOGIC VIA TRANSACTIONS ---
+        let updatePromises = cart.map(item => {
+            return dbRef.child("inventory/" + item.id).transaction((currentProduct) => {
+                if (currentProduct) {
+                    let currentQty = parseInt(currentProduct.qty || 0);
+                    if (currentQty > 0) {
+                        currentProduct.qty = currentQty - 1;
+                    }
+                }
+                return currentProduct;
+            });
         });
-    }
 
-    function renderThankYouScreen(order) {
-        showSection('thank-you-page');
-        document.getElementById('success-summary-box').innerHTML = `
-            <p style="margin-bottom: 5px;"><b>Order ID:</b> #${order.id}</p>
-            <p style="margin-bottom: 5px;"><b>Phone No:</b> ${order.phone_num}</p>
-            <p style="margin-bottom: 5px;"><b>Total Price:</b> ₹${order.total}</p>
-            <p style="margin-bottom: 5px;"><b>Date/Time:</b> ${order.date}</p>
-            <p><b>Recipient:</b> ${order.address.split(',')[0]}</p>
-        `;
+        // --- PRIVATE NODE SEPARATION: SAVING ORDERS SEPARATELY PER USER ---
+        Promise.all(updatePromises).then(() => {
+            dbRef.child("orders/" + activeUser + "/" + order.id).set(order).then(() => {
+                cart = []; 
+                localStorage.removeItem('kmart_active_cart');
+                updateHeader();
+                document.getElementById('success-summary-box').innerHTML = `
+                    <p style="margin-bottom: 5px;"><b>Order ID:</b> #${order.id}</p>
+                    <p style="margin-bottom: 5px;"><b>Phone No:</b> ${order.phone_num}</p>
+                    <p style="margin-bottom: 5px;"><b>Total Price:</b> ₹${order.total}</p>
+                    <p style="margin-bottom: 5px;"><b>Date/Time:</b> ${order.date}</p>
+                    <p><b>Recipient:</b> ${order.address.split(',')[0]}</p>
+                `;
+                showSection('thank-you-page');
+            });
+        }).catch(err => {
+            console.error("Stock reduction failure:", err);
+            notifyUser("Processing error. Please try again.", false);
+        });
     }
 
     function renderOrders() {
         const activeUser = localStorage.getItem('kmart_active_user');
-        const users = JSON.parse(localStorage.getItem('kmart_users')) || {};
         
-        let activeEmail = "";
-        if (users[activeUser] && users[activeUser].email) {
-            activeEmail = users[activeUser].email;
-        } else {
-            activeEmail = activeUser + "@kmart.local";
-        }
-
-        let db = JSON.parse(localStorage.getItem('kmart_orders')) || [];
-        let myOrders = db.filter(o => o.user_email === activeEmail);
-
-        document.getElementById('order-list').innerHTML = myOrders.map(o => `
-            <div class="order-header"><div>PLACED<br>${o.date}</div><div>TOTAL<br>₹${o.total}</div><div style="text-align:right"># ${o.id}</div></div>
-            <div class="order-body">
-                <div class="status-bold" style="color:${o.status === 'Rejected' ? 'var(--p)' : 'var(--success)'};">
-                    ${o.status === 'Rejected' ? `❌ Payment Rejected: ${o.reason || 'Verification failed'}` : o.status}
-                </div>
-                <div style="display:flex; gap:12px;">
-                    <button class="btn btn-p" style="width:160px" onclick="viewDetails('${o.id}')">View details</button>
-                    <button class="btn btn-sec" style="width:140px; margin-top:10px;" onclick="reorderOldOrder('${o.id}')">🔄 Reorder</button>
-                </div>
-            </div>`).join('') || "<p style='font-size:14px;'>No orders placed yet.</p>";
+        // --- REALTIME DYNAMIC LIVE DATA SEPARATION FOR ORDERS ---
+        dbRef.child("orders/" + activeUser).once('value', (snapshot) => {
+            const userOrders = snapshot.val() || {};
+            let db = [];
+            for (let id in userOrders) {
+                db.unshift(userOrders[id]);
+            }
+            
+            document.getElementById('order-list').innerHTML = db.map(o => `
+                <div class="order-header"><div>PLACED<br>${o.date}</div><div>TOTAL<br>₹${o.total}</div><div style="text-align:right"># ${o.id}</div></div>
+                <div class="order-body">
+                    <div class="status-bold" style="color:${o.status === 'Rejected' ? 'var(--p)' : 'var(--success)'};">
+                        ${o.status === 'Rejected' ? `❌ Payment Rejected: ${o.reason || 'Verification failed'}` : o.status}
+                    </div>
+                    <div style="display:flex; gap:12px;">
+                        <button class="btn btn-p" style="width:160px" onclick="viewDetails('${o.id}')">View details</button>
+                        <button class="btn btn-sec" style="width:140px; margin-top:10px;" onclick="reorderOldOrder('${o.id}')">🔄 Reorder</button>
+                    </div>
+                </div>`).join('') || "<p style='font-size:14px;'>No orders placed yet.</p>";
+        });
     }
 
     function reorderOldOrder(id) {
-        const db = JSON.parse(localStorage.getItem('kmart_orders')) || [];
-        const order = db.find(o => o.id === id);
-        if(!order || !order.items_list) return;
+        const activeUser = localStorage.getItem('kmart_active_user');
+        dbRef.child("orders/" + activeUser + "/" + id).once('value', (snapshot) => {
+            const order = snapshot.val();
+            if(!order || !order.items_list) return;
 
-        cart = [...cart, ...order.items_list];
-        localStorage.setItem('kmart_active_cart', JSON.stringify(cart));
-        updateHeader();
-        notifyUser("Items reordered successfully!", true);
-        showSection('cart-page');
+            cart = [...cart, ...order.items_list];
+            localStorage.setItem('kmart_active_cart', JSON.stringify(cart));
+            updateHeader();
+            notifyUser("Items reordered successfully!", true);
+            showSection('cart-page');
+        });
     }
 
     function viewDetails(id) {
-        const db = JSON.parse(localStorage.getItem('kmart_orders')) || [];
-        const o = db.find(x => x.id === id);
-        if(!o) return;
-        const steps = ["Ordered", "Packed", "Dispatched", "Delivered"];
-        const curIdx = steps.indexOf(o.status);
-        let lineWidth = curIdx > 0 ? (curIdx / (steps.length - 1)) * 100 : 0;
-        let itemsHtml = o.items_list ? o.items_list.map(item => `<div class="details-item-card"><img src="${item.img}"><div><b>${item.name}</b><br>₹${item.price}</div></div>`).join('') : "";
+        const activeUser = localStorage.getItem('kmart_active_user');
+        dbRef.child("orders/" + activeUser + "/" + id).once('value', (snapshot) => {
+            const o = snapshot.val();
+            if(!o) return;
+            const steps = ["Ordered", "Packed", "Dispatched", "Delivered"];
+            const curIdx = steps.indexOf(o.status);
+            let lineWidth = curIdx > 0 ? (curIdx / (steps.length - 1)) * 100 : 0;
+            let itemsHtml = o.items_list ? o.items_list.map(item => `<div class="details-item-card"><img src="${item.img}"><div><b>${item.name}</b><br>₹${item.price}</div></div>`).join('') : "";
 
-        document.getElementById('details-content').innerHTML = `
-            <div style="background:white; padding:15px; border-bottom:1px solid #ddd; display:flex; align-items:center; gap:10px;"><span style="font-size:20px; cursor:pointer" onclick="showSection('orders-page')">❮</span><h3 style="font-weight:800;">Order Status</h3></div>
-            <div class="card">
-                <h3 style="color:${o.status === 'Pending Verification' ? 'orange' : o.status === 'Rejected' ? 'var(--p)' : 'var(--success)'}">
-                    ${o.status === 'Pending Verification' ? '🕒 Payment Verifying...' : o.status === 'Rejected' ? `❌ Rejected: ${o.reason || 'Verification Failed'}` : '✅ Payment Verified'}
-                </h3>
-                ${o.status !== 'Pending Verification' && o.status !== 'Rejected' && o.status !== 'Cancelled' ? `<div class="tracker"><div class="tracker-line" style="width: ${lineWidth}%;"></div><div class="step ${curIdx >= 0 ? 'active' : ''}"><div class="dot"></div>Ordered</div><div class="step ${curIdx >= 1 ? 'active' : ''}"><div class="dot"></div>Packed</div><div class="step ${curIdx >= 2 ? 'active' : ''}"><div class="dot"></div>Dispatched</div><div class="step ${curIdx >= 3 ? 'active' : ''}"><div class="dot"></div>Delivered</div></div>` : ''}
-            </div>
-            <div class="card"><div style="display:grid; grid-template-columns: 1fr; gap:10px;">${itemsHtml}</div></div>
-            <div class="card"><h4>Delivery Address</h4><div style="font-size:13px; margin-top:10px;">📍 <b>${o.address.split(',')[0]}</b><br>${o.address}</div></div>
-            <div class="card"><h4>Need help?</h4><div class="help-row" onclick="startChat('${o.id}')"><div>Issue with items</div><span>❯</span></div></div>`;
-        showSection('details-page');
+            document.getElementById('details-content').innerHTML = `
+                <div style="background:white; padding:15px; border-bottom:1px solid #ddd; display:flex; align-items:center; gap:10px;"><span style="font-size:20px; cursor:pointer" onclick="showSection('orders-page')">❮</span><h3 style="font-weight:800;">Order Status</h3></div>
+                <div class="card">
+                    <h3 style="color:${o.status === 'Pending Verification' ? 'orange' : o.status === 'Rejected' ? 'var(--p)' : 'var(--success)'}">
+                        ${o.status === 'Pending Verification' ? '🕒 Payment Verifying...' : o.status === 'Rejected' ? `❌ Rejected: ${o.reason || 'Verification Failed'}` : '✅ Payment Verified'}
+                    </h3>
+                    ${o.status !== 'Pending Verification' && o.status !== 'Rejected' && o.status !== 'Cancelled' ? `<div class="tracker"><div class="tracker-line" style="width: ${lineWidth}%;"></div><div class="step ${curIdx >= 0 ? 'active' : ''}"><div class="dot"></div>Ordered</div><div class="step ${curIdx >= 1 ? 'active' : ''}"><div class="dot"></div>Packed</div><div class="step ${curIdx >= 2 ? 'active' : ''}"><div class="dot"></div>Dispatched</div><div class="step ${curIdx >= 3 ? 'active' : ''}"><div class="dot"></div>Delivered</div></div>` : ''}
+                </div>
+                <div class="card"><div style="display:grid; grid-template-columns: 1fr; gap:10px;">${itemsHtml}</div></div>
+                <div class="card"><h4>Delivery Address</h4><div style="font-size:13px; margin-top:10px;">📍 <b>${o.address.split(',')[0]}</b><br>${o.address}</div></div>
+                <div class="card"><h4>Need help?</h4><div class="help-row" onclick="startChat('${o.id}')"><div>Issue with items</div><span>❯</span></div></div>`;
+            showSection('details-page');
+        });
     }
 
     function startChat(id) {
