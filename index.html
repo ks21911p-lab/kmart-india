@@ -361,10 +361,9 @@
 
     const inventory = [];
 
+    // REAL-TIME SYNC FOR ALL ACCOUNTS (SELLER CATALOG LIVE LISTENER)
     dbRef.on('value', (snapshot) => {
         const data = snapshot.val() || {};
-        
-        // --- GLOBAL SELLER CATALOG CATALOG REALTIME REAL SYNC FOR ALL ACCOUNTS ---
         const inventoryData = data.inventory || {};
         let items = [];
         for (let key in inventoryData) {
@@ -513,7 +512,7 @@
     }
 
     function sendLoginOtp() {}
-     Richmond resendLoginCode() {}
+    function resendLoginCode() {}
     function verifyLoginOtp() {}
 
     function sendRegisterOtp() {
@@ -634,7 +633,7 @@
         }
 
         document.getElementById('product-list').innerHTML = dataset.map(p => {
-            // --- QUANTITY DYNAMIC STOCK CONTROL CHECK ---
+            // DYNAMIC STOCK QUANTITY VISUAL LAYER
             const isOutOfStock = !p.qty || parseInt(p.qty) <= 0;
             return `
             <div class="p-card">
@@ -856,13 +855,13 @@
             items_list: [...cart], 
             total: cart.reduce((a, b) => a + b.price, 0), 
             status: "Pending Verification", 
-            address: `${ad.name}, ${ad.flat}, ${ad.area}, ${ad.city}, ${ad.state} - PIN: ${ad.pin}`, 
+            address: `${ad.name}, ${ad.flat}, ${ad.area}, ${ad.city}, ${ad.pin}`, 
             date: timestamp,
             user_email: email,
             phone_num: phone
         };
         
-        // --- SELLER inventory DECREMENT LOGIC VIA TRANSACTIONS ---
+        // TRANSACTION SELLER STOCK SYNC CONTROL LOOP
         let updatePromises = cart.map(item => {
             return dbRef.child("inventory/" + item.id).transaction((currentProduct) => {
                 if (currentProduct) {
@@ -875,7 +874,7 @@
             });
         });
 
-        // --- PRIVATE NODE SEPARATION: SAVING ORDERS SEPARATELY PER USER ---
+        // DEPLOY DIRECT AS PRIVATE SEPARATE ACCOUNT NODES
         Promise.all(updatePromises).then(() => {
             dbRef.child("orders/" + activeUser + "/" + order.id).set(order).then(() => {
                 cart = []; 
@@ -891,15 +890,15 @@
                 showSection('thank-you-page');
             });
         }).catch(err => {
-            console.error("Stock reduction failure:", err);
-            notifyUser("Processing error. Please try again.", false);
+            console.error("Stock atomic loop reduction failed:", err);
+            notifyUser("Processing exception. Try again.", false);
         });
     }
 
     function renderOrders() {
         const activeUser = localStorage.getItem('kmart_active_user');
         
-        // --- REALTIME DYNAMIC LIVE DATA SEPARATION FOR ORDERS ---
+        // REALTIME DATA SEPARATION ISOLATION LOOP
         dbRef.child("orders/" + activeUser).once('value', (snapshot) => {
             const userOrders = snapshot.val() || {};
             let db = [];
@@ -961,38 +960,38 @@
     }
 
     function startChat(id) {
-        activeSupportId = id; 
+        activeSupportId = id; 
         document.getElementById('kbot-window').style.display = 'flex';
         document.getElementById('kbot-input-area').classList.remove('hidden');
         
         let chats = JSON.parse(localStorage.getItem('kmart_live_chat')) || {};
-        if(!chats[id]) { 
-            chats[id] = { active: true, userName: "Customer", messages: [{sender: 'bot', text: 'Connecting...'}] }; 
+        if(!chats[id]) { 
+            chats[id] = { active: true, userName: "Customer", messages: [{sender: 'bot', text: 'Connecting...'}] }; 
             dbRef.child("chats/" + id).set(chats[id]);
         }
     }
 
-    function sendKBotMsg() { 
-        const v = document.getElementById('kbot-msg-input').value; 
-        if(!v) return; 
-        let chats = JSON.parse(localStorage.getItem('kmart_live_chat')) || {}; 
+    function sendKBotMsg() { 
+        const v = document.getElementById('kbot-msg-input').value; 
+        if(!v) return; 
+        let chats = JSON.parse(localStorage.getItem('kmart_live_chat')) || {}; 
         if(chats[activeSupportId]) {
             if(!chats[activeSupportId].messages) chats[activeSupportId].messages = [];
             chats[activeSupportId].messages.push({sender:'user', text:v});
             dbRef.child("chats/" + activeSupportId).set(chats[activeSupportId]);
-            document.getElementById('kbot-msg-input').value = ""; 
+            document.getElementById('kbot-msg-input').value = ""; 
         }
     }
 
     function syncLive() {
         let chats = JSON.parse(localStorage.getItem('kmart_live_chat')) || {};
-        if(!chats[activeSupportId] || !chats[activeSupportId].active) { 
-            if(activeSupportId) { 
-                notifyUser("The chat session has ended.", false); 
-                document.getElementById('kbot-window').style.display='none'; 
-                activeSupportId=""; 
-            } 
-            return; 
+        if(!chats[activeSupportId] || !chats[activeSupportId].active) { 
+            if(activeSupportId) { 
+                notifyUser("The chat session has ended.", false); 
+                document.getElementById('kbot-window').style.display='none'; 
+                activeSupportId=""; 
+            } 
+            return; 
         }
         document.getElementById('kbot-content').innerHTML = chats[activeSupportId].messages.map(m => `<div class="kbot-msg kbot-${m.sender}">${m.text}</div>`).join('');
         document.getElementById('kbot-content').scrollTop = 9999;
