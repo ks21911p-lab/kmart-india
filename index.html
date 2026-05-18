@@ -61,6 +61,7 @@
             .p-card h4 { font-size: 13px; height: 34px; overflow: hidden; }
             .form-group-grid { grid-template-columns: 1fr !important; }
             .otp-box { width: 40px; height: 45px; }
+            .mobile-payment-btn { display: block !important; }
         }
 
         .tracker { display: flex; justify-content: space-between; margin: 25px 0; position: relative; padding: 0 10px; }
@@ -111,6 +112,9 @@
 
         .form-group-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .pin-loader { font-size: 11px; font-weight: 600; color: var(--blue); margin-top: -5px; margin-bottom: 8px; display: none; }
+        
+        /* Premium Custom UPI Application Deep-linking Intent Action Button */
+        .mobile-payment-btn { background: #1e293b; color: white; border: 1px solid #334155; padding: 14px; font-size: 14px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%; display: none; text-align: center; text-decoration: none; margin-bottom: 15px; }
     </style>
 </head>
 <body>
@@ -157,7 +161,7 @@
                         <input type="text" maxlength="1" class="otp-box" oninput="handleOtpInput(this)" onkeydown="handleOtpBackspace(event, this)">
                     </div>
                     <div class="resend-text">Didn't get code? <span id="login-resend" class="resend-link disabled" onclick="resendLoginCode()">Resend in 15s</span></div>
-                    <button class="btn btn-p" onclick="verifyLoginOtp()">Verify & Sign In</button>
+                    <div class="btn btn-p" onclick="verifyLoginOtp()">Verify & Sign In</div>
                 </div>
                 <p style="font-size: 13px; margin-top:15px; color:#555;">New to K Mart India? <span onclick="toggleAuth('register')" style="cursor:pointer; color:var(--blue); font-weight:bold;">Create account</span></p>
                 <p style="font-size: 12px; margin-top:10px;"><span onclick="toggleAuth('forgot')" style="cursor:pointer; color:var(--p); font-weight:bold;">Forgot Password?</span></p>
@@ -271,6 +275,9 @@
                 <div class="checkout-card">
                     <div class="section-title">2. Payment Method</div>
                     <div style="padding:10px 0;">
+                        
+                        <a href="#" id="mobile-upi-intent-link" class="mobile-payment-btn">📱 Pay via Any UPI App (Google Pay / PhonePe)</a>
+
                         <div style="display:flex; align-items:center; gap:12px;">
                             <input type="radio" checked style="width:auto; margin:0;">
                             <div>
@@ -830,12 +837,19 @@
         document.getElementById('summary-items-cost').innerText = `₹${itemsCost}`;
         document.getElementById('summary-total-cost').innerText = `₹${itemsCost}`;
 
-        // DYNAMIC QUANTITY SYNC: GEN-QR BASED ON REAL-TIME CART TOTAL
+        // REAL-TIME UPI INTENT LINK AND INTERACTION WITH EXACT CART TOTAL VALUE ENFORCED
+        let upiID = "yourupiid@okhdfcbank"; // APNI REAL UPI ID YAHA CHANGE KAR LENA
+        let upiLink = `upi://pay?pa=${upiID}&pn=K%20Mart%20India&am=${itemsCost}&cu=INR`;
+        
+        // Configuration for Mobile Apps trigger links
+        const mobileIntentBtn = document.getElementById('mobile-upi-intent-link');
+        if (mobileIntentBtn) {
+            mobileIntentBtn.href = upiLink;
+        }
+
+        // Live Server QR Engine pipeline configuration loops
         const qrImg = document.getElementById('checkout-qr');
         if (qrImg) {
-            // TERI REAL UPI ID: APNI UPI ID CHNAGE KAR LENA YAHA PAR
-            let upiID = "pankajsingh27031973-5@okaxis"; 
-            let upiLink = `upi://pay?pa=${upiID}&pn=K%20Mart%20India&am=${itemsCost}&cu=INR`;
             qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(upiLink)}`;
         }
     }
@@ -863,7 +877,7 @@
             items_list: [...cart], 
             total: cart.reduce((a, b) => a + b.price, 0), 
             status: "Pending Verification", 
-            address: `${ad.name}, ${ad.flat}, ${ad.area}, ${ad.city}, ${ad.state} - PIN: ${ad.pin}`, 
+            address: `${ad.name}, ${ad.flat}, ${ad.area}, ${ad.city}, ${ad.pin}`, 
             date: timestamp,
             user_email: email,
             phone_num: phone
