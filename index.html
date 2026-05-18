@@ -281,7 +281,7 @@
 
                         <div class="qr-box" style="max-width:280px; margin: 20px auto 10px auto;">
                             <div style="position: relative; width: 140px; height: 140px; margin: 0 auto; cursor: pointer;" onclick="document.getElementById('checkout-qr').classList.remove('blur'); document.getElementById('qr-payment-text').style.display='none';">
-                                <img id="checkout-qr" src="https://lh3.googleusercontent.com/d/16YwDCb122FRZ_QGtOJDS1_CS93f8n1-1" class="blur" style="width: 100%; height: 100%; border-radius: 8px; transition: 0.3s;" onerror="this.src='https://docs.google.com/uc?export=view&id=16YwDCb122FRZ_QGtOJDS1_CS93f8n1-1'">
+                                <img id="checkout-qr" src="" class="blur" style="width: 100%; height: 100%; border-radius: 8px; transition: 0.3s;">
                                 <div id="qr-payment-text" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; font-size: 11px; font-weight: 800; color: var(--p); text-shadow: 0 0 5px white;">Click to Reveal QR</div>
                             </div>
                             <p style="font-size:12px; margin-top:10px; font-weight:600; color:#444;">Scan and Pay to proceed</p>
@@ -601,7 +601,6 @@
         checkAuth();
     }
 
-    // Tab nodes tree constraints mapping logic layout configurations
     function showSection(id) {
         if(!localStorage.getItem('kmart_active_user')) return checkAuth();
         localStorage.setItem('kmart_current_page', id);
@@ -830,6 +829,15 @@
         let itemsCost = cart.reduce((a, b) => a + b.price, 0);
         document.getElementById('summary-items-cost').innerText = `₹${itemsCost}`;
         document.getElementById('summary-total-cost').innerText = `₹${itemsCost}`;
+
+        // DYNAMIC QUANTITY SYNC: GEN-QR BASED ON REAL-TIME CART TOTAL
+        const qrImg = document.getElementById('checkout-qr');
+        if (qrImg) {
+            // TERI REAL UPI ID: APNI UPI ID CHNAGE KAR LENA YAHA PAR
+            let upiID = "pankajsingh27031973-5@okaxis"; 
+            let upiLink = `upi://pay?pa=${upiID}&pn=K%20Mart%20India&am=${itemsCost}&cu=INR`;
+            qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(upiLink)}`;
+        }
     }
 
     function placeOrder() {
@@ -855,7 +863,7 @@
             items_list: [...cart], 
             total: cart.reduce((a, b) => a + b.price, 0), 
             status: "Pending Verification", 
-            address: `${ad.name}, ${ad.flat}, ${ad.area}, ${ad.city}, ${ad.pin}`, 
+            address: `${ad.name}, ${ad.flat}, ${ad.area}, ${ad.city}, ${ad.state} - PIN: ${ad.pin}`, 
             date: timestamp,
             user_email: email,
             phone_num: phone
@@ -888,7 +896,7 @@
                 showSection('thank-you-page');
             });
         }).catch(err => {
-            console.error("Stock reduction failed constraints loop architecture handling updates:", err);
+            console.error("Stock atomic loop reduction failed:", err);
             notifyUser("Processing exception. Try again.", false);
         });
     }
@@ -945,7 +953,7 @@
                 <div style="background:white; padding:15px; border-bottom:1px solid #ddd; display:flex; align-items:center; gap:10px;"><span style="font-size:20px; cursor:pointer" onclick="showSection('orders-page')">❮</span><h3 style="font-weight:800;">Order Status</h3></div>
                 <div class="card">
                     <h3 style="color:${o.status === 'Pending Verification' ? 'orange' : o.status === 'Rejected' ? 'var(--p)' : 'var(--success)'}">
-                        ${o.status === 'Pending Verification' ? '🕒 Payment Verifying...' : o.status === 'Rejected' ? `❌ Rejected: ${o.reason || 'Verification Failed'}` : 'Alternative Verified state'}
+                        ${o.status === 'Pending Verification' ? '🕒 Payment Verifying...' : o.status === 'Rejected' ? `❌ Rejected: ${o.reason || 'Verification Failed'}` : '✅ Payment Verified'}
                     </h3>
                     ${o.status !== 'Pending Verification' && o.status !== 'Rejected' && o.status !== 'Cancelled' ? `<div class="tracker"><div class="tracker-line" style="width: ${lineWidth}%;"></div><div class="step ${curIdx >= 0 ? 'active' : ''}"><div class="dot"></div>Ordered</div><div class="step ${curIdx >= 1 ? 'active' : ''}"><div class="dot"></div>Packed</div><div class="step ${curIdx >= 2 ? 'active' : ''}"><div class="dot"></div>Dispatched</div><div class="step ${curIdx >= 3 ? 'active' : ''}"><div class="dot"></div>Delivered</div></div>` : ''}
                 </div>
