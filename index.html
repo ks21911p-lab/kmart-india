@@ -61,7 +61,7 @@
             .p-card h4 { font-size: 13px; height: 34px; overflow: hidden; }
             .form-group-grid { grid-template-columns: 1fr !important; }
             .otp-box { width: 40px; height: 45px; }
-            .mobile-payment-btn { display: block !important; }
+            .apps-payment-container { display: block !important; }
         }
 
         .tracker { display: flex; justify-content: space-between; margin: 25px 0; position: relative; padding: 0 10px; }
@@ -113,8 +113,9 @@
         .form-group-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .pin-loader { font-size: 11px; font-weight: 600; color: var(--blue); margin-top: -5px; margin-bottom: 8px; display: none; }
         
-        /* Premium Custom UPI Application Deep-linking Intent Action Button */
-        .mobile-payment-btn { background: #1e293b; color: white; border: 1px solid #334155; padding: 14px; font-size: 14px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%; display: none; text-align: center; text-decoration: none; margin-bottom: 15px; }
+        /* Premium Branded Apps Grid Flow rules */
+        .apps-payment-container { display: none; margin-bottom: 20px; border: 1px dashed #cbd5e1; padding: 15px; border-radius: 8px; background: #fafafa; }
+        .app-link-btn { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px; font-size: 13.5px; font-weight: bold; border-radius: 6px; text-decoration: none; margin-bottom: 8px; color: white; transition: 0.2s; }
     </style>
 </head>
 <body>
@@ -161,7 +162,7 @@
                         <input type="text" maxlength="1" class="otp-box" oninput="handleOtpInput(this)" onkeydown="handleOtpBackspace(event, this)">
                     </div>
                     <div class="resend-text">Didn't get code? <span id="login-resend" class="resend-link disabled" onclick="resendLoginCode()">Resend in 15s</span></div>
-                    <div class="btn btn-p" onclick="verifyLoginOtp()">Verify & Sign In</div>
+                    <button class="btn btn-p" onclick="verifyLoginOtp()">Verify & Sign In</button>
                 </div>
                 <p style="font-size: 13px; margin-top:15px; color:#555;">New to K Mart India? <span onclick="toggleAuth('register')" style="cursor:pointer; color:var(--blue); font-weight:bold;">Create account</span></p>
                 <p style="font-size: 12px; margin-top:10px;"><span onclick="toggleAuth('forgot')" style="cursor:pointer; color:var(--p); font-weight:bold;">Forgot Password?</span></p>
@@ -276,7 +277,12 @@
                     <div class="section-title">2. Payment Method</div>
                     <div style="padding:10px 0;">
                         
-                        <a href="#" id="mobile-upi-intent-link" class="mobile-payment-btn">📱 Pay via Any UPI App (Google Pay / PhonePe)</a>
+                        <div class="apps-payment-container">
+                            <p style="font-size:12px; font-weight:bold; margin-bottom:10px; color:#555;">📱 SELECT PREFERRED UPI APP TO PAY:</p>
+                            <a href="#" id="gpay-intent-link" class="app-link-btn" style="background:#4285F4;">🔵 Pay via Google Pay</a>
+                            <a href="#" id="phonepe-intent-link" class="app-link-btn" style="background:#5f259f;">🟣 Pay via PhonePe</a>
+                            <a href="#" id="paytm-intent-link" class="app-link-btn" style="background:#00baf2; color:#111;">🔵 Pay via Paytm</a>
+                        </div>
 
                         <div style="display:flex; align-items:center; gap:12px;">
                             <input type="radio" checked style="width:auto; margin:0;">
@@ -410,6 +416,7 @@
         }
     }
 
+    // OTP node tree values elements collectors bounds
     function getCollectedOtp(viewId) {
         let otp = "";
         const boxes = document.querySelectorAll(`#${viewId} .otp-box`);
@@ -837,20 +844,22 @@
         document.getElementById('summary-items-cost').innerText = `₹${itemsCost}`;
         document.getElementById('summary-total-cost').innerText = `₹${itemsCost}`;
 
-        // REAL-TIME UPI INTENT LINK AND INTERACTION WITH EXACT CART TOTAL VALUE ENFORCED
-        let upiID = "yourupiid@okhdfcbank"; // APNI REAL UPI ID YAHA CHANGE KAR LENA
-        let upiLink = `upi://pay?pa=${upiID}&pn=K%20Mart%20India&am=${itemsCost}&cu=INR`;
+        // REAL-TIME APPS EMBED: SEAMLESS INTENT CONFIGURATION LOOPS
+        let upiID = "pankajsingh27031973-5@okaxis"; // APNI REAL UPI ID YAHA CHANGE KAR LENA
         
-        // Configuration for Mobile Apps trigger links
-        const mobileIntentBtn = document.getElementById('mobile-upi-intent-link');
-        if (mobileIntentBtn) {
-            mobileIntentBtn.href = upiLink;
-        }
+        let gpayLink = `upi://pay?pa=${upiID}&pn=K%20Mart%20India&am=${itemsCost}&cu=INR&mode=02&purpose=00&orgid=159002&sign=MEYCIQCc`;
+        let phonepeLink = `upi://pay?pa=${upiID}&pn=K%20Mart%20India&am=${itemsCost}&cu=INR`;
+        let paytmLink = `upi://pay?pa=${upiID}&pn=K%20Mart%20India&am=${itemsCost}&cu=INR`;
 
-        // Live Server QR Engine pipeline configuration loops
+        if (document.getElementById('gpay-intent-link')) document.getElementById('gpay-intent-link').href = gpayLink;
+        if (document.getElementById('phonepe-intent-link')) document.getElementById('phonepe-intent-link').href = phonepeLink;
+        if (document.getElementById('paytm-intent-link')) document.getElementById('paytm-intent-link').href = paytmLink;
+
+        // FIXED CHANNELS: TARGET GENERATED DEEPLINK INTERACTION ON QR DISPLAYS
         const qrImg = document.getElementById('checkout-qr');
         if (qrImg) {
-            qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(upiLink)}`;
+            let generalUpiLink = `upi://pay?pa=${upiID}&pn=K%20Mart%20India&am=${itemsCost}&cu=INR`;
+            qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(generalUpiLink)}`;
         }
     }
 
