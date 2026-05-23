@@ -72,7 +72,7 @@
         .order-header { display: flex; justify-content: space-between; background: #F0F2F2; padding: 15px; border-radius: 12px 12px 0 0; border: 1px solid #ddd; font-size: 12px; color: #565959; }
         .order-body { background: white; padding: 20px; border: 1px solid #ddd; border-top:none; border-radius: 0 0 12px 12px; margin-bottom: 25px; }
         .status-bold { font-size: 18px; font-weight: 800; margin-bottom: 10px; }
-        .btn { padding: 10px; border: none; border-radius: 8px; cursor: pointer; color: white; font-weight: bold; width: 100%; margin-top: 10px; font-size: 14px; transition: background 0.2s, transform 0.2s; }
+        .btn { padding: 10px; border: none; border-radius: 8px; cursor: pointer; color: white; font-weight: bold; width: 100%; margin-top: 10px; font-size: 14px; transition: background 0.2s, transform 0.2s; text-align: center; }
         .btn:hover { opacity: 0.92; transform: translateY(-2px); }
         .btn-p { background: #FFD814; color: #111; border: 1px solid #FCD200; }
         .btn-sec { background: white; color: #111; border: 1px solid #D5D9D9; }
@@ -81,13 +81,13 @@
         .details-item-card img { width: 70px; height: 70px; object-fit: contain; }
         
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 18px; }
-        .p-card { background: white; padding: 15px; border-radius: 12px; border: 1px solid #eee; text-align: center; display: flex; flex-direction: column; justify-content: space-between; }
+        .p-card { background: white; padding: 15px; border-radius: 12px; border: 1px solid #eee; text-align: center; display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 10px; cursor: pointer; }
         .p-card img { width: 100%; height: 140px; object-fit: contain; border-radius: 8px; margin-bottom: 8px; }
         .qr-box { text-align: center; border: 1px dashed #ccc; padding: 15px; border-radius: 12px; background: #fafafa; margin: 15px 0; }
         
         /* Persistent Blue Tint Overlay Cover Class */
         .blur { filter: blur(20px) brightness(0.6) sepia(1) hue-rotate(190deg) saturate(3); border: 2px solid var(--blue) !important; pointer-events: none; }
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; outline: none; transition: border-color 0.3s; font-size: 16px;}
+        input, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; outline: none; transition: border-color 0.3s; font-size: 16px;}
         input:focus { border-color: var(--blue); }
 
         .checkout-layout { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 15px; }
@@ -136,6 +136,12 @@
         .toast-action-btn { flex: 1; padding: 8px; font-size: 12px; font-weight: bold; border-radius: 6px; border: none; cursor: pointer; color: white; }
         .toast-progress-bar { position: absolute; bottom: 0; left: 0; width: 100%; height: 4px; background: var(--p); transform-origin: left; }
         @keyframes shrinkWidth { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+        .review-card-item { background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 12px; margin-top: 6px; text-align: left; }
+        
+        /* Flipkart style structure elements for user panel */
+        .prod-detail-container { display: flex; flex-wrap: wrap; gap: 30px; background: white; padding: 25px; border-radius: 12px; border: 1px solid #ddd; }
+        .badge-pill-trust { display: inline-block; padding: 5px 12px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 20px; font-size: 11px; font-weight: bold; color: #475569; margin-right: 6px; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -253,6 +259,11 @@
         </div>
         <div class="grid" id="product-list"></div>
     </div>
+
+    <div id="product-details-page" class="hidden">
+        <button class="btn btn-sec" style="width:auto; margin-bottom:15px; padding:8px 20px; color:#111;" onclick="showSection('home-page')">❮ Back to Store</button>
+        <div id="p-details-box" class="prod-detail-container"></div>
+    </div>
     
     <div id="address-page" class="hidden">
         <div class="card" style="max-width:550px; margin:auto;">
@@ -318,9 +329,8 @@
                         <div id="apps-selection-block" class="apps-payment-container">
                             
                             <div class="mobile-apps-only-view">
-                                <p style="font-size:12px; font-weight:bold; margin-bottom:10px; color:#555;">
-</p>
-                                <a href="#" id="master-mobile-upi-link" onclick="handleMobileRedirectLogTrigger()" class="app-link-btn" style="background:var(--blue);">🚀 Tap to Pay with Upi</a>
+                                <p style="font-size:12px; font-weight:bold; margin-bottom:10px; color:#555;">📱 MOBILE PHONE DETECTED:</p>
+                                <a href="#" id="master-mobile-upi-link" onclick="handleMobileRedirectLogTrigger()" class="app-link-btn" style="background:var(--blue);">🚀 Open UPI Apps Drawer</a>
                             </div>
 
                             <div class="pc-qr-only-view" style="text-align:center;">
@@ -354,11 +364,21 @@
 
             <div class="checkout-side">
                 <div class="side-summary-box">
+                    <div style="margin-bottom:15px; padding-bottom:15px; border-bottom:1px dashed #cbd5e1;">
+                        <label style="font-size:12px; font-weight:bold; color:#475569;">🎟️ HAVE A PROMO COUPON CODE?</label>
+                        <div style="display:flex; gap:6px; margin-top:4px;">
+                            <input type="text" id="coupon-entry-field" placeholder="Enter coupon..." style="margin:0; padding:8px; font-size:13px;">
+                            <button class="btn btn-p" style="margin:0; width:80px; font-size:12px; padding:0;" onclick="applyLiveDynamicCouponToken()">Apply</button>
+                        </div>
+                        <div id="coupon-status-alert-node" style="font-size:11px; font-weight:600; margin-top:4px;"></div>
+                    </div>
+
                     <button class="btn btn-p" style="background:#2ecc71; border-color:#27ae60; color:white; font-size:15px; margin-bottom:15px;" onclick="placeOrder()">I have Paid - Place Order</button>
                     <div style="font-size: 11px; color:#555; text-align:center; margin-bottom:15px;">By placing your order, you agree to K Mart India's terms.</div>
                     
                     <h3 style="font-weight:800; font-size:16px; margin-bottom:10px;">Order Summary</h3>
                     <div class="summary-row"><span>Items:</span><span id="summary-items-cost">₹0</span></div>
+                    <div class="summary-row" id="coupon-discount-row" style="color:var(--success); display:none;"><span>Coupon Discount:</span><span id="summary-discount-amt">-₹0</span></div>
                     <div class="summary-row"><span>Delivery:</span><span style="color:var(--success); font-weight:bold;">FREE Delivery</span></div>
                     <div class="summary-total"><span>Order Total:</span><span id="summary-total-cost">₹0</span></div>
                 </div>
@@ -377,6 +397,7 @@
             
             <div style="background: #fdfdfd; padding: 15px; border-radius: 8px; border: 1px solid #eee; text-align: left; margin-bottom: 25px;" id="success-summary-box"></div>
             
+            <button class="btn btn-sec" style="margin-bottom:10px;" onclick="window.print()">🖨️ Print Order Invoice Bill</button>
             <button class="btn btn-p" onclick="showSection('home-page')" style="width: auto; padding: 12px 35px;">Continue Shopping</button>
         </div>
     </div>
@@ -387,9 +408,10 @@
         <div class="notif-logo" style="display:none;">K<span>MART</span></div>
         <div class="kbot-header"><span>🤖 K-Bot Support</span> <span onclick="closeKBot()" style="cursor:pointer">✖</span></div>
         <div id="kbot-content" class="kbot-body"></div>
-        <div id="kbot-input-area" class="hidden" style="padding:10px; border-top:1px solid #ddd; background:white; display:flex; gap:5px;">
-            <input type="text" id="kbot-msg-input" style="flex:1; padding:8px; border-radius:5px; border:1px solid #ddd;">
-            <button class="btn btn-p" onclick="sendKBotMsg()" style="width:auto; margin:0; padding:8px 15px;">Send</button>
+        <div class="kbot-options-pane">
+            <div class="kbot-opt-chip" onclick="handleFAQAutoReply('Where is my order?')">Where is my order? 🚚</div>
+            <div class="kbot-opt-chip" onclick="handleFAQAutoReply('How to pay?')">How to pay? 💳</div>
+            <div class="kbot-opt-chip" onclick="handleFAQAutoReply('Can I get refund?')">Can I get refund? 🔄</div>
         </div>
     </div>
 </div>
@@ -403,7 +425,9 @@
     const firebaseConfig = {
         databaseURL: "https://k---mart-default-rtdb.firebaseio.com/"
     };
-    firebase.initializeApp(firebaseConfig);
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
     const dbRef = firebase.database().ref();
 
     (function() {
@@ -416,35 +440,47 @@
     let tempUserData = null;
     let resendTimer = null;
     
-    // Timer Tracking Parameters
     let qrTimerInterval = null;
     let prompterTimeoutHandle = null;
-    let activeCheckoutOrderID = ""; // Core Persistent ID Node
+    let activeCheckoutOrderID = ""; 
+    let activeCouponDiscountPercent = 0;
+    let activeCouponTokenString = "";
 
-    const inventory = [];
+    // Global memory loop variable map
+    let globalActiveOrdersSnapshot = {};
 
     dbRef.on('value', (snapshot) => {
         const data = snapshot.val() || {};
+        
+        // Extract items securely into proper list mapping schema
         const inventoryData = data.inventory || {};
         let items = [];
         for (let key in inventoryData) {
-            items.push(inventoryData[key]);
+            if (inventoryData[key]) items.push(inventoryData[key]);
         }
         localStorage.setItem('kmart_inventory', JSON.stringify(items));
 
         const chatsData = data.chats || {};
         localStorage.setItem('kmart_live_chat', JSON.stringify(chatsData));
 
+        const currentUser = localStorage.getItem('kmart_active_user');
+        if (currentUser && data.orders && data.orders[currentUser]) {
+            globalActiveOrdersSnapshot = data.orders[currentUser];
+        } else {
+            globalActiveOrdersSnapshot = {};
+        }
+
         if (localStorage.getItem('kmart_active_user')) {
             updateHeader();
-            if (localStorage.getItem('kmart_current_page') === 'home-page') renderHome();
-            if (localStorage.getItem('kmart_current_page') === 'orders-page') renderOrders();
-            if (localStorage.getItem('kmart_current_page') === 'details-page' && activeSupportId) syncLive();
-            
-            // FATAK SE LIVE SYNC LOGIC TRIGGER ON BACK-END ADJUSTMENTS
-            if (localStorage.getItem('kmart_current_page') === 'payment-page') {
-                syncLivePaymentPriceParameters();
+            const cp = localStorage.getItem('kmart_current_page') || 'home-page';
+            if (cp === 'home-page') renderHome();
+            if (cp === 'product-details-page') {
+                const activeViewId = localStorage.getItem('kmart_last_viewed_pid');
+                if(activeViewId) openProductDetail(activeViewId);
             }
+            if (cp === 'orders-page') renderOrders();
+            if (cp === 'details-page' && activeSupportId) syncLive();
+            if (cp === 'payment-page') syncLivePaymentPriceParameters();
         }
     });
 
@@ -454,6 +490,49 @@
         notif.style.borderColor = isSuccess ? "var(--success)" : "var(--p)";
         notif.classList.add('show');
         setTimeout(() => { notif.classList.remove('show'); }, 3000);
+    }
+
+    function handleFAQAutoReply(question) {
+        appendChatMsgNode('user', question);
+        setTimeout(() => {
+            if(question.includes('Where')) {
+                appendChatMsgNode('bot', "K Mart Delivery Update: Please check the 'Your Orders' tab. Once verified by Krishna Pankaj Singh, your tracker will update live in 10 minutes!");
+            } else if(question.includes('pay')) {
+                appendChatMsgNode('bot', "Payment Rule: You can launch UPI apps on phone or copy note context parameters safely. Scanning QR code works instantly on Laptop device modes.");
+            } else {
+                appendChatMsgNode('bot', "Refund Matrix: If payment confirmation is rejected by admin panel panel, atomic fund values rollback automatically to source account in 48 hours.");
+            }
+        }, 1000);
+    }
+
+    function appendChatMsgNode(sender, txt) {
+        const pane = document.getElementById('kbot-content');
+        if(!pane) return;
+        pane.innerHTML += `<div class="msg-container-${sender==='user'?'right':'left'}"><div class="kbot-msg kbot-${sender}">${txt}</div></div>`;
+        pane.scrollTop = pane.scrollHeight;
+    }
+
+    function applyLiveDynamicCouponToken() {
+        const token = document.getElementById('coupon-entry-field').value.trim();
+        const alertNode = document.getElementById('coupon-status-alert-node');
+        if (!token) return;
+
+        dbRef.child("coupons/" + token).once('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data && data.active) {
+                activeCouponDiscountPercent = parseInt(data.discount || 0);
+                activeCouponTokenString = token;
+                alertNode.style.color = "var(--success)";
+                alertNode.innerText = `✓ Code applied! Extra ${activeCouponDiscountPercent}% savings activated.`;
+                syncLivePaymentPriceParameters();
+            } else {
+                activeCouponDiscountPercent = 0;
+                activeCouponTokenString = "";
+                alertNode.style.color = "var(--p)";
+                alertNode.innerText = "✕ Invalid or Expired coupon token code.";
+                syncLivePaymentPriceParameters();
+            }
+        });
     }
 
     function handleOtpInput(element) {
@@ -469,6 +548,7 @@
         }
     }
 
+    // IDENTITY AUTH CORE MAPS
     function getCollectedOtp(viewId) {
         let otp = "";
         const boxes = document.querySelectorAll(`#${viewId} .otp-box`);
@@ -516,7 +596,7 @@
             document.getElementById('auth-page').classList.remove('hidden');
             document.getElementById('site-header').classList.add('hidden');
             document.getElementById('site-loc').classList.add('hidden');
-            ['home-page','address-page','cart-page','payment-page','orders-page','details-page','thank-you-page'].forEach(s => document.getElementById(s).classList.add('hidden'));
+            ['home-page','address-page','cart-page','payment-page','orders-page','details-page','thank-you-page','product-details-page'].forEach(s => document.getElementById(s).classList.add('hidden'));
         }
     }
 
@@ -670,7 +750,7 @@
     function showSection(id) {
         if(!localStorage.getItem('kmart_active_user')) return checkAuth();
         localStorage.setItem('kmart_current_page', id);
-        ['home-page','address-page','cart-page','payment-page','orders-page','details-page','thank-you-page'].forEach(s => document.getElementById(s).classList.add('hidden'));
+        ['home-page','address-page','cart-page','payment-page','orders-page','details-page','thank-you-page','product-details-page'].forEach(s => document.getElementById(s).classList.add('hidden'));
         document.getElementById(id).classList.remove('hidden');
         
         if(id === 'home-page') { renderHome(); document.getElementById('suggest-box').style.display='none'; }
@@ -678,7 +758,6 @@
         if(id === 'address-page') renderAddressView();
         
         if(id === 'payment-page') {
-            // LOCK COMPULSORY ID BEFORE LINKING ENGINE
             activeCheckoutOrderID = "KM-" + Math.floor(100000 + Math.random() * 900000);
             resetPCMerchantQRToCoveredState(); 
             renderSecurePayment();
@@ -707,63 +786,133 @@
         document.getElementById('product-list').innerHTML = dataset.map(p => {
             const isOutOfStock = !p.qty || parseInt(p.qty) <= 0;
             return `
-            <div class="p-card">
+            <div class="p-card" onclick="showProductDetailsPageGateway('${p.id}')">
                 <img src="${p.img}">
                 <h4 style="margin:4px 0">${p.name}</h4>
-                <p style="font-size:12px; color:#666; margin-bottom:5px;">${p.desc || 'No description available'}</p>
+                <p style="font-size:12px; color:#666; margin-bottom:5px; height: 32px; overflow:hidden;">${p.desc || 'No description available'}</p>
                 <p style="font-weight:800; color:#B12704; margin:5px 0;">₹${p.price}</p>
                 <p style="font-size:11px; color:${isOutOfStock ? 'red' : 'green'}; font-weight:bold; margin-bottom:5px;">
                     ${isOutOfStock ? 'Out of Stock' : `Qty Left: ${p.qty}`}
                 </p>
-                <button class="btn btn-p" ${isOutOfStock ? 'disabled style="background:#ccc; cursor:not-allowed;"' : ''} onclick="addToBag('${p.id}')">
+                <button class="btn btn-p" ${isOutOfStock ? 'disabled style="background:#ccc; cursor:not-allowed;"' : ''} onclick="event.stopPropagation(); addToBag('${p.id}')">
                     ${isOutOfStock ? 'Sold Out' : 'Add to Bag'}
                 </button>
             </div>`;
         }).join('');
     }
 
-    function handleLiveSearch(val) {
-        const sBox = document.getElementById('suggest-box');
-        if(!val) { sBox.style.display = 'none'; renderHome(); return; }
+    // SHOW COMPLIANT INTERACTIVE VIEWPORT ROUTING LOGIC
+    function showProductDetailsPageGateway(pid) {
+        localStorage.setItem('kmart_last_viewed_pid', pid);
+        openProductDetail(pid);
+    }
 
+    function openProductDetail(pid) {
         let localInv = JSON.parse(localStorage.getItem('kmart_inventory')) || [];
-        let filtered = localInv.filter(p => p.name.toLowerCase().includes(val.toLowerCase()));
-        if(filtered.length === 0) {
-            sBox.innerHTML = `<div class="suggest-item">No products found.</div>`;
-            sBox.style.display = 'block';
-            renderHome([]);
-            return;
+        let p = localInv.find(x => x.id == pid);
+        if(!p) return;
+
+        // Strict cross validation check loop parameters
+        let isVerifiedBuyer = false;
+        for (let orderId in globalActiveOrdersSnapshot) {
+            let itemRecord = globalActiveOrdersSnapshot[orderId];
+            if (itemRecord.items_list && itemRecord.status === "Delivered") {
+                if (itemRecord.items_list.some(match => match.id == pid)) {
+                    isVerifiedBuyer = true;
+                    break;
+                }
+            }
         }
 
-        sBox.innerHTML = filtered.map(p => {
-            const highlightRegex = new RegExp(`(${val})`, "gi");
-            const highlightText = p.name.replace(highlightRegex, `<b>$1</b>`);
-            return `<div class="suggest-item" onclick="applyDirectProductSelection('${p.id}')">${highlightText} - ₹${p.price}</div>`;
-        }).join('');
+        let specificationHtml = "";
+        if (p.category === "Clothing" && p.fabric) {
+            specificationHtml = `<div style="margin-top:10px; font-size:13px; background:#f8fafc; padding:10px; border-radius:6px;">
+                <p><b>Fabric Type:</b> ${p.fabric}</p>
+                <p><b>Sleeve Type:</b> ${p.sleeve || 'N/A'}</p>
+                <p><b>Pattern Type:</b> ${p.pattern || 'N/A'}</p>
+            </div>`;
+        } else if (p.category === "Bags" && p.fabric) {
+            specificationHtml = `<div style="margin-top:10px; font-size:13px; background:#f8fafc; padding:10px; border-radius:6px;">
+                <p><b>Material Selection:</b> ${p.fabric}</p>
+                <p><b>Compartments Count:</b> ${p.sleeve || 'N/A'}</p>
+                <p><b>Water Resistance:</b> ${p.pattern || 'N/A'}</p>
+            </div>`;
+        } else if (p.fabric) {
+            specificationHtml = `<div style="margin-top:10px; font-size:13px; background:#f8fafc; padding:10px; border-radius:6px;">
+                <p><b>Specifications:</b> ${p.fabric}</p>
+            </div>`;
+        }
+
+        document.getElementById('p-details-box').innerHTML = `
+            <div style="flex:1; min-width:280px; text-align:center;">
+                <img src="${p.img}" style="max-width:100%; max-height:320px; object-fit:contain; border-radius:8px;">
+            </div>
+            <div style="flex:1.5; min-width:300px; text-align:left;">
+                <h2 style="font-weight:800; color:#111;">${p.name}</h2>
+                <div style="margin: 5px 0;">
+                    <span style="font-size:11px; background:#007185; color:white; padding:3px 8px; border-radius:4px; font-weight:800;">K Mart Assured</span>
+                </div>
+                
+                <h2 style="color:#B12704; font-weight:800; margin:12px 0;">₹${p.price}</h2>
+                
+                <p style="font-size:14px; color:#333; line-height:1.5; margin-bottom:15px;">${p.desc || 'No product description available.'}</p>
+                
+                ${specificationHtml}
+                
+                <div style="margin: 15px 0; border-top:1px solid #eee; padding-top:10px;">
+                    <div class="badge-pill-trust">↩️ ${p.return_policy || '7 Days Return Policy'}</div>
+                    <div class="badge-pill-trust">🛡️ Genuine Product</div>
+                    <div class="badge-pill-trust">🔒 Secure Payment</div>
+                </div>
+
+                <button class="btn btn-p" style="max-width:240px; display:block; margin-top:20px;" onclick="addToBag('${p.id}')">Add to Shopping Bag</button>
+
+                <div style="margin-top:25px; border-top:1px dashed #ddd; padding-top:15px;">
+                    <h4 style="font-weight:800; margin-bottom:10px; color:#475569;">Verified Ratings & Customer Reviews</h4>
+                    <div id="reviews-pane-holder-details" style="max-height:150px; overflow-y:auto; margin-bottom:12px;">Loading reviews...</div>
+                    
+                    <div id="secure-review-writing-node">
+                        ${isVerifiedBuyer ? `
+                            <div style="display:flex; gap:6px;">
+                                <input type="text" id="review-input-field-details" placeholder="Share your experience with this product..." style="margin:0;">
+                                <button class="btn btn-p" style="margin:0; width:90px;" onclick="submitDetailsPageReviewToken('${p.id}')">Post</button>
+                            </div>
+                        ` : `
+                            <p style="font-size:12px; color:#ef4444; font-weight:600; background:#fef2f2; padding:10px; border-radius:6px; border:1px solid #fee2e2;">
+                                ⚠️ Review entry limited: Only customers who purchased and received this specific item from K Mart can rate or submit reviews.
+                            </p>
+                        `}
+                    </div>
+                </div>
+            </div>
+        `;
         
-        sBox.style.display = 'block';
-        renderHome(filtered);
+        showSection('product-details-page');
+        fetchDetailsPageReviews(p.id);
     }
 
-    function applyDirectProductSelection(id) {
-        let localInv = JSON.parse(localStorage.getItem('kmart_inventory')) || [];
-        let matchedItem = localInv.filter(p => p.id == id);
-        renderHome(matchedItem);
-        document.getElementById('suggest-box').style.display='none';
+    function fetchDetailsPageReviews(pid) {
+        dbRef.child(`reviews/${pid}`).once('value', (snap) => {
+            const data = snap.val() || {};
+            let html = "";
+            for(let rk in data){
+                html += `<div class="review-card-item"><b>Verified Buyer:</b> ${data[rk].comment}</div>`;
+            }
+            document.getElementById('reviews-pane-holder-details').innerHTML = html || `<p style="font-size:12px; color:#666;">No reviews posted yet for this product.</p>`;
+        });
     }
 
-    function addToBag(id) { 
-        let localInv = JSON.parse(localStorage.getItem('kmart_inventory')) || [];
-        let p = localInv.find(x => x.id == id);
-        if(p) {
-            if(!p.qty || parseInt(p.qty) <= 0) return notifyUser("Item is out of stock!", false);
-            cart.push(p); 
-            localStorage.setItem('kmart_active_cart', JSON.stringify(cart));
-            document.getElementById('cart-count').innerText = cart.length; 
-            notifyUser("Item added to Bag successfully!", true);
-            if (localStorage.getItem('kmart_current_page') === 'payment-page') syncLivePaymentPriceParameters();
-        }
+    function submitDetailsPageReviewToken(pid) {
+        const msg = document.getElementById('review-input-field-details').value.trim();
+        if (!msg) return;
+        dbRef.child(`reviews/${pid}`).push({ comment: msg }).then(() => {
+            document.getElementById('review-input-field-details').value = "";
+            notifyUser("Review shared successfully!", true);
+            openProductDetail(pid);
+        });
     }
+
+    function fetchReviewsForActiveCatalog() {}
 
     function renderCart() {
         const list = document.getElementById('cart-items');
@@ -904,20 +1053,28 @@
         syncLivePaymentPriceParameters();
     }
 
-    // MICROSECOND SYNCHRONIZER BALANCING LOOPS (FATAK SE MULTI-CHANNEL DATA PUSH)
     function syncLivePaymentPriceParameters() {
         let itemsCost = cart.reduce((a, b) => a + b.price, 0);
+        let discount = Math.round((itemsCost * activeCouponDiscountPercent) / 100);
+        let finalCost = itemsCost - discount;
+
+        if (document.getElementById('summary-items-cost')) document.getElementById('summary-items-cost').innerText = `₹${itemsCost}`;
         
-        const costSummary = document.getElementById('summary-items-cost');
-        const costTotal = document.getElementById('summary-total-cost');
-        if (costSummary) costSummary.innerText = `₹${itemsCost}`;
-        if (costTotal) costTotal.innerText = `₹${itemsCost}`;
+        const row = document.getElementById('coupon-discount-row');
+        const amt = document.getElementById('summary-discount-amt');
+        if (row && activeCouponDiscountPercent > 0) {
+            row.style.display = "flex";
+            amt.innerText = `-₹${discount}`;
+        } else if(row) {
+            row.style.display = "none";
+        }
+
+        if (document.getElementById('summary-total-cost')) document.getElementById('summary-total-cost').innerText = `₹${finalCost}`;
 
         let upiID = "pankajsingh27031973-5@okaxis"; 
         
-        // STRICT INLINE NOTE IMPLEMENTATION SPECIFICATION RULE MAPPED
         let merchantNote = `You are paying for order ${activeCheckoutOrderID}`;
-        let upiLink = `upi://pay?pa=${upiID}&pn=Krishna%20Pankaj%20Singh&am=${itemsCost}&tn=${encodeURIComponent(merchantNote)}&cu=INR`;
+        let upiLink = `upi://pay?pa=${upiID}&pn=Krishna%20Pankaj%20Singh&am=${finalCost}&tn=${encodeURIComponent(merchantNote)}&cu=INR`;
         
         const masterMobileBtn = document.getElementById('master-mobile-upi-link');
         if (masterMobileBtn) masterMobileBtn.href = upiLink;
@@ -928,7 +1085,6 @@
         }
     }
 
-    // BLUE COVER RESET STATE MANAGER PIPELINE
     function resetPCMerchantQRToCoveredState() {
         if (qrTimerInterval) clearInterval(qrTimerInterval);
         if (prompterTimeoutHandle) clearTimeout(prompterTimeoutHandle);
@@ -966,7 +1122,6 @@
         schedulePromptToastPollingLoop();
     }
 
-    // 5-Minute Countdown Scheduler
     function startPCFiveMinuteTimerPipeline() {
         if (qrTimerInterval) clearInterval(qrTimerInterval);
         let timeRemaining = 300; 
@@ -980,13 +1135,12 @@
 
             if (timeRemaining <= 0) {
                 clearInterval(qrTimerInterval);
-                resetPCMerchantQRToCoveredState(); // Force roll back to locked blue screen console logs
+                resetPCMerchantQRToCoveredState();
                 notifyUser("Token Session expired. Click again to reveal naya QR Code.", false);
             }
         }, 1000);
     }
 
-    // 2.5-Minute Recursive Prompter Notification Toast System
     function schedulePromptToastPollingLoop() {
         if (prompterTimeoutHandle) clearTimeout(prompterTimeoutHandle);
         
@@ -1007,7 +1161,7 @@
                 }
             }, 7000);
 
-        }, 150000); // 150000ms mark is exact 2.5 minutes interval reminder loop parameters
+        }, 150000);
     }
 
     function dismissPaidToast(selectionState) {
@@ -1037,17 +1191,19 @@
 
         const now = new Date();
         const timestamp = now.toLocaleDateString('en-GB') + ' ' + now.toLocaleTimeString('en-GB');
+        let itemsCost = cart.reduce((a, b) => a + b.price, 0);
+        let discount = Math.round((itemsCost * activeCouponDiscountPercent) / 100);
 
-        // PERSISTENT UNIQUE FIXED ORDER ID COUPLING PIPELINE MATCHED WITH NOTE CAPTURED STRINGS
         const order = { 
             id: activeCheckoutOrderID, 
             items_list: [...cart], 
-            total: cart.reduce((a, b) => a + b.price, 0), 
+            total: (itemsCost - discount), 
             status: "Pending Verification", 
             address: `${ad.name}, ${ad.flat}, ${ad.area}, ${ad.city}, ${ad.pin}`, 
             date: timestamp,
             user_email: email,
-            phone_num: phone
+            phone_num: phone,
+            applied_coupon: activeCouponTokenString
         };
         
         let updatePromises = cart.map(item => {
@@ -1069,7 +1225,6 @@
                 updateHeader();
                 document.getElementById('success-summary-box').innerHTML = `
                     <p style="margin-bottom: 5px;"><b>Order ID:</b> #${order.id}</p>
-                    <p style="margin-bottom: 5px;"><b>Phone No:</b> ${order.phone_num}</p>
                     <p style="margin-bottom: 5px;"><b>Total Price:</b> ₹${order.total}</p>
                     <p style="margin-bottom: 5px;"><b>Date/Time:</b> ${order.date}</p>
                     <p><b>Recipient Address:</b> ${order.address}</p>
@@ -1077,7 +1232,7 @@
                 showSection('thank-you-page');
             });
         }).catch(err => {
-            console.error("Stock matrix reduction failure loop mapping adjustments logs:", err);
+            console.error("Stock matrix reduction failure", err);
             notifyUser("Processing exception. Try again.", false);
         });
     }
@@ -1109,7 +1264,6 @@
         dbRef.child("orders/" + activeUser + "/" + id).once('value', (snapshot) => {
             const order = snapshot.val();
             if(!order || !order.items_list) return;
-
             cart = [...cart, ...order.items_list];
             localStorage.setItem('kmart_active_cart', JSON.stringify(cart));
             updateHeader();
@@ -1146,7 +1300,6 @@
     function startChat(id) {
         activeSupportId = id; 
         document.getElementById('kbot-window').style.display = 'flex';
-        document.getElementById('kbot-input-area').classList.remove('hidden');
         
         let chats = JSON.parse(localStorage.getItem('kmart_live_chat')) || {};
         if(!chats[id]) { 
